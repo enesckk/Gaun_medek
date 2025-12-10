@@ -29,6 +29,8 @@ dist/
 build/
 .next/
 out/
+frontend/.next/
+frontend/.env.local
 
 # Temporary files
 tmp/
