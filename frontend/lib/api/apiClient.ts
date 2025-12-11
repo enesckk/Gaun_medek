@@ -30,7 +30,18 @@ apiClient.interceptors.response.use(
     return response;
   },
   (error) => {
-    // Handle common errors
+    // Handle network errors (backend not running)
+    if (error.code === "ERR_NETWORK" || error.message === "Network Error") {
+      const errorMessage = "Backend sunucusuna bağlanılamıyor. Lütfen backend'in çalıştığından emin olun.";
+      console.error("Network Error:", errorMessage);
+      // Create a custom error with user-friendly message
+      const networkError = new Error(errorMessage);
+      (networkError as any).isNetworkError = true;
+      (networkError as any).originalError = error;
+      return Promise.reject(networkError);
+    }
+
+    // Handle common HTTP errors
     if (error.response?.status === 401) {
       // Handle unauthorized
       console.error("Unauthorized access");

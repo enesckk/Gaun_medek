@@ -19,7 +19,7 @@ export function LOAchievementTable({ achievements }: LOAchievementTableProps) {
   if (achievements.length === 0) {
     return (
       <div className="text-center py-8 text-muted-foreground">
-        No learning outcome data available
+        Öğrenme çıktısı verisi bulunamadı
       </div>
     );
   }
@@ -35,12 +35,12 @@ export function LOAchievementTable({ achievements }: LOAchievementTableProps) {
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>LO Code</TableHead>
-            <TableHead>Description</TableHead>
-            <TableHead className="text-center">Total Questions</TableHead>
-            <TableHead className="text-center">Max Score Sum</TableHead>
-            <TableHead className="text-center">Avg Achievement %</TableHead>
-            <TableHead>Visual</TableHead>
+            <TableHead>ÖÇ Kodu</TableHead>
+            <TableHead>Açıklama</TableHead>
+            <TableHead className="text-center">Öğrenci Sayısı</TableHead>
+            <TableHead className="text-center">Toplam Max Puan</TableHead>
+            <TableHead className="text-center">Ortalama Başarı %</TableHead>
+            <TableHead>Görsel</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>

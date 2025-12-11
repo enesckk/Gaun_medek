@@ -11,6 +11,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { type Student } from "@/lib/api/studentApi";
 import { DeleteStudentDialog } from "./DeleteStudentDialog";
 import { useState } from "react";
@@ -37,38 +38,54 @@ export function StudentTable({ students, onDelete }: StudentTableProps) {
 
   if (students.length === 0) {
     return (
-      <div className="text-center py-8 text-muted-foreground">
-        No students found
+      <div className="text-center py-12 text-muted-foreground border-2 border-dashed rounded-lg">
+        <p className="text-lg font-medium">Öğrenci bulunamadı</p>
       </div>
     );
   }
 
   return (
     <>
-      <div className="rounded-md border">
+      <div className="rounded-md border border-slate-200 overflow-hidden">
         <Table>
           <TableHeader>
-            <TableRow>
-              <TableHead>Student Number</TableHead>
-              <TableHead>Name</TableHead>
-              <TableHead>Department</TableHead>
-              <TableHead>Class Level</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
+            <TableRow className="bg-slate-50">
+              <TableHead className="font-semibold text-slate-900">Öğrenci Numarası</TableHead>
+              <TableHead className="font-semibold text-slate-900">İsim</TableHead>
+              <TableHead className="font-semibold text-slate-900">Bölüm</TableHead>
+              <TableHead className="font-semibold text-slate-900">Sınıf Seviyesi</TableHead>
+              <TableHead className="text-right font-semibold text-slate-900">İşlemler</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {students.map((student, index) => (
               <TableRow
                 key={student._id}
-                className={index % 2 === 0 ? "bg-background" : "bg-muted/50"}
+                className={index % 2 === 0 ? "bg-background hover:bg-slate-50" : "bg-muted/30 hover:bg-slate-50"}
               >
-                <TableCell className="font-medium">{student.studentNumber}</TableCell>
-                <TableCell>{student.name}</TableCell>
-                <TableCell className="text-muted-foreground">
-                  {student.department || "-"}
+                <TableCell className="font-medium text-slate-900">
+                  <Badge variant="outline" className="font-mono">
+                    {student.studentNumber}
+                  </Badge>
                 </TableCell>
-                <TableCell className="text-muted-foreground">
-                  {student.classLevel || "-"}
+                <TableCell className="font-medium text-slate-700">{student.name}</TableCell>
+                <TableCell>
+                  {student.department ? (
+                    <Badge variant="secondary" className="text-xs">
+                      {student.department}
+                    </Badge>
+                  ) : (
+                    <span className="text-muted-foreground">-</span>
+                  )}
+                </TableCell>
+                <TableCell>
+                  {student.classLevel ? (
+                    <Badge variant="outline" className="text-xs">
+                      {student.classLevel}. Sınıf
+                    </Badge>
+                  ) : (
+                    <span className="text-muted-foreground">-</span>
+                  )}
                 </TableCell>
                 <TableCell className="text-right">
                   <div className="flex justify-end gap-2">
@@ -76,6 +93,7 @@ export function StudentTable({ students, onDelete }: StudentTableProps) {
                       variant="outline"
                       size="icon"
                       asChild
+                      className="h-8 w-8"
                     >
                       <Link href={`/students/${student._id}`}>
                         <Eye className="h-4 w-4" />
@@ -85,6 +103,7 @@ export function StudentTable({ students, onDelete }: StudentTableProps) {
                       variant="outline"
                       size="icon"
                       asChild
+                      className="h-8 w-8"
                     >
                       <Link href={`/students/${student._id}?edit=true`}>
                         <Edit className="h-4 w-4" />
@@ -94,6 +113,7 @@ export function StudentTable({ students, onDelete }: StudentTableProps) {
                       variant="destructive"
                       size="icon"
                       onClick={() => handleDeleteClick(student)}
+                      className="h-8 w-8"
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>

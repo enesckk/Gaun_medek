@@ -4,8 +4,10 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { OutcomeForm } from "@/components/outcomes/OutcomeForm";
 import { learningOutcomeApi, type LearningOutcome } from "@/lib/api/learningOutcomeApi";
+import { ArrowLeft } from "lucide-react";
 
 export default function EditOutcomePage() {
   const params = useParams();
@@ -26,7 +28,7 @@ export default function EditOutcomePage() {
       const data = await learningOutcomeApi.getById(outcomeId);
       setOutcome(data);
     } catch (error: any) {
-      toast.error("Failed to load learning outcome");
+      toast.error("Öğrenme çıktısı yüklenirken hata oluştu");
       router.push("/outcomes");
     } finally {
       setIsLoading(false);
@@ -37,8 +39,7 @@ export default function EditOutcomePage() {
     return (
       <div className="space-y-6">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight">Edit Learning Outcome</h2>
-          <p className="text-muted-foreground">Loading learning outcome details...</p>
+          <p className="text-muted-foreground">Öğrenme çıktısı ayrıntıları yükleniyor...</p>
         </div>
       </div>
     );
@@ -50,18 +51,21 @@ export default function EditOutcomePage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-3xl font-bold tracking-tight">Edit Learning Outcome</h2>
+      <div className="flex items-center gap-3">
+        <Button variant="ghost" size="sm" onClick={() => router.back()} className="px-2">
+          <ArrowLeft className="h-4 w-4 mr-1" />
+          Geri
+        </Button>
         <p className="text-muted-foreground">
-          Update learning outcome information and program outcome mappings
+          Öğrenme çıktısı bilgilerini ve program çıktısı eşlemelerini güncelleyin
         </p>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Learning Outcome Information</CardTitle>
+          <CardTitle>Öğrenme Çıktısı Bilgileri</CardTitle>
           <CardDescription>
-            Update the learning outcome details below. All fields marked with * are required.
+            Aşağıdaki öğrenme çıktısı ayrıntılarını güncelleyin. <span className="text-destructive">*</span> işaretli alanlar zorunludur.
           </CardDescription>
         </CardHeader>
         <CardContent>

@@ -7,10 +7,17 @@ interface DialogProps {
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
   children: React.ReactNode;
+  size?: "default" | "large" | "full";
 }
 
-const Dialog = ({ open, onOpenChange, children }: DialogProps) => {
+const Dialog = ({ open, onOpenChange, children, size = "default" }: DialogProps) => {
   if (!open) return null;
+
+  const sizeClasses = {
+    default: "max-w-lg",
+    large: "max-w-4xl",
+    full: "max-w-[85vw] w-[85vw]",
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
@@ -18,7 +25,7 @@ const Dialog = ({ open, onOpenChange, children }: DialogProps) => {
         className="fixed inset-0 bg-black/50"
         onClick={() => onOpenChange?.(false)}
       />
-      <div className="relative z-50 w-full max-w-lg mx-4">{children}</div>
+      <div className={`relative z-50 w-full ${sizeClasses[size]} mx-4`}>{children}</div>
     </div>
   );
 };

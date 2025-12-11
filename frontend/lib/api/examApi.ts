@@ -2,7 +2,7 @@ import apiClient from "./apiClient";
 
 export interface Exam {
   _id: string;
-  courseId: string;
+  courseId: string | { _id: string; name: string; code: string; learningOutcomes?: Array<{ code: string; description: string }> };
   examType: "midterm" | "final";
   examCode: string;
   questionCount: number;
@@ -119,13 +119,35 @@ export const examApi = {
   },
 
   getByCourse: async (courseId: string): Promise<Exam[]> => {
-    const response = await apiClient.get(`/exams/course/${courseId}`);
-    return response.data.data;
+    // Ensure courseId is a string
+    const id = typeof courseId === 'string' ? courseId : courseId?.toString() || String(courseId);
+    if (!id || id === '[object Object]' || id === 'undefined' || id === 'null') {
+      console.error('Invalid courseId provided to getByCourse:', courseId);
+      return [];
+    }
+    try {
+      const response = await apiClient.get(`/exams/course/${id}`);
+      return response.data.data || [];
+    } catch (error) {
+      console.error('Error fetching exams by course:', error);
+      return [];
+    }
   },
 
   getById: async (id: string): Promise<Exam> => {
-    const response = await apiClient.get(`/exams/${id}`);
-    return response.data.data;
+    // Ensure id is a string
+    const examId = typeof id === 'string' ? id : id?.toString() || String(id);
+    if (!examId || examId === 'undefined' || examId === 'null' || examId === '[object Object]') {
+      console.error('Invalid exam ID provided to getById:', id);
+      throw new Error(`Geçersiz sınav ID: ${examId}`);
+    }
+    try {
+      const response = await apiClient.get(`/exams/${examId}`);
+      return response.data.data;
+    } catch (error: any) {
+      console.error('Error fetching exam by ID:', error);
+      throw error;
+    }
   },
 
   create: async (data: CreateExamDto): Promise<Exam> => {

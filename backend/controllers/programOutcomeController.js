@@ -230,9 +230,3 @@ export const updateProgramOutcome = async (req, res) => {
   });
 };
 
-export const deleteProgramOutcome = async (req, res) => {
-  return res.status(400).json({
-    success: false,
-    message: "Bu endpoint kullanımdan kaldırıldı. Lütfen /api/program-outcomes/:departmentId/update ile tüm listeyi güncelleyin.",
-  });
-};

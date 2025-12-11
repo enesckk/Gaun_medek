@@ -37,18 +37,18 @@ export function ExamSettingsComponent({
   };
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
       {/* Midterm Card */}
-      <Card className="rounded-xl shadow-sm border-2">
-        <CardHeader>
-          <CardTitle className="text-2xl">Vize Sınavı</CardTitle>
-          <CardDescription className="text-base">
+      <Card className="rounded-lg shadow-sm border">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">Vize Sınavı</CardTitle>
+          <CardDescription className="text-xs">
             Vize sınavı ayarlarını girin
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4 p-6">
-          <div className="space-y-2">
-            <Label htmlFor="midterm-code" className="text-lg font-semibold">
+        <CardContent className="space-y-3 p-4">
+          <div className="space-y-1.5">
+            <Label htmlFor="midterm-code" className="text-sm">
               Sınav Kodu (2 haneli) <span className="text-destructive">*</span>
             </Label>
             <Input
@@ -62,17 +62,17 @@ export function ExamSettingsComponent({
               placeholder="01"
               disabled={disabled}
               className={cn(
-                "h-14 text-lg text-center font-mono",
-                errors.midtermExamCode ? "border-destructive border-2" : ""
+                "h-10 text-sm text-center font-mono",
+                errors.midtermExamCode ? "border-destructive" : ""
               )}
             />
             {errors.midtermExamCode && (
-              <p className="text-sm text-destructive">{errors.midtermExamCode}</p>
+              <p className="text-xs text-destructive">{errors.midtermExamCode}</p>
             )}
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="midterm-questions" className="text-lg font-semibold">
+          <div className="space-y-1.5">
+            <Label htmlFor="midterm-questions" className="text-sm">
               Soru Sayısı <span className="text-destructive">*</span>
             </Label>
             <Input
@@ -86,19 +86,19 @@ export function ExamSettingsComponent({
               placeholder="10"
               disabled={disabled}
               className={cn(
-                "h-14 text-lg",
-                errors.midtermQuestionCount ? "border-destructive border-2" : ""
+                "h-10 text-sm",
+                errors.midtermQuestionCount ? "border-destructive" : ""
               )}
             />
             {errors.midtermQuestionCount && (
-              <p className="text-sm text-destructive">
+              <p className="text-xs text-destructive">
                 {errors.midtermQuestionCount}
               </p>
             )}
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="midterm-max-score" className="text-lg font-semibold">
+          <div className="space-y-1.5">
+            <Label htmlFor="midterm-max-score" className="text-sm">
               Soru Başına Maksimum Puan <span className="text-destructive">*</span>
             </Label>
             <Input
@@ -116,28 +116,28 @@ export function ExamSettingsComponent({
               placeholder="10"
               disabled={disabled}
               className={cn(
-                "h-14 text-lg",
-                errors.midtermMaxScore ? "border-destructive border-2" : ""
+                "h-10 text-sm",
+                errors.midtermMaxScore ? "border-destructive" : ""
               )}
             />
             {errors.midtermMaxScore && (
-              <p className="text-sm text-destructive">{errors.midtermMaxScore}</p>
+              <p className="text-xs text-destructive">{errors.midtermMaxScore}</p>
             )}
           </div>
         </CardContent>
       </Card>
 
       {/* Final Card */}
-      <Card className="rounded-xl shadow-sm border-2">
-        <CardHeader>
-          <CardTitle className="text-2xl">Final Sınavı</CardTitle>
-          <CardDescription className="text-base">
+      <Card className="rounded-lg shadow-sm border">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">Final Sınavı</CardTitle>
+          <CardDescription className="text-xs">
             Final sınavı ayarlarını girin
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4 p-6">
-          <div className="space-y-2">
-            <Label htmlFor="final-code" className="text-lg font-semibold">
+        <CardContent className="space-y-3 p-4">
+          <div className="space-y-1.5">
+            <Label htmlFor="final-code" className="text-sm">
               Sınav Kodu (2 haneli) <span className="text-destructive">*</span>
             </Label>
             <Input
@@ -151,17 +151,17 @@ export function ExamSettingsComponent({
               placeholder="02"
               disabled={disabled}
               className={cn(
-                "h-14 text-lg text-center font-mono",
-                errors.finalExamCode ? "border-destructive border-2" : ""
+                "h-10 text-sm text-center font-mono",
+                errors.finalExamCode ? "border-destructive" : ""
               )}
             />
             {errors.finalExamCode && (
-              <p className="text-sm text-destructive">{errors.finalExamCode}</p>
+              <p className="text-xs text-destructive">{errors.finalExamCode}</p>
             )}
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="final-questions" className="text-lg font-semibold">
+          <div className="space-y-1.5">
+            <Label htmlFor="final-questions" className="text-sm">
               Soru Sayısı <span className="text-destructive">*</span>
             </Label>
             <Input
@@ -175,17 +175,17 @@ export function ExamSettingsComponent({
               placeholder="10"
               disabled={disabled}
               className={cn(
-                "h-14 text-lg",
-                errors.finalQuestionCount ? "border-destructive border-2" : ""
+                "h-10 text-sm",
+                errors.finalQuestionCount ? "border-destructive" : ""
               )}
             />
             {errors.finalQuestionCount && (
-              <p className="text-sm text-destructive">{errors.finalQuestionCount}</p>
+              <p className="text-xs text-destructive">{errors.finalQuestionCount}</p>
             )}
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="final-max-score" className="text-lg font-semibold">
+          <div className="space-y-1.5">
+            <Label htmlFor="final-max-score" className="text-sm">
               Soru Başına Maksimum Puan <span className="text-destructive">*</span>
             </Label>
             <Input
@@ -203,12 +203,12 @@ export function ExamSettingsComponent({
               placeholder="10"
               disabled={disabled}
               className={cn(
-                "h-14 text-lg",
-                errors.finalMaxScore ? "border-destructive border-2" : ""
+                "h-10 text-sm",
+                errors.finalMaxScore ? "border-destructive" : ""
               )}
             />
             {errors.finalMaxScore && (
-              <p className="text-sm text-destructive">{errors.finalMaxScore}</p>
+              <p className="text-xs text-destructive">{errors.finalMaxScore}</p>
             )}
           </div>
         </CardContent>

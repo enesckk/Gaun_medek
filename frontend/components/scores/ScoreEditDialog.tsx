@@ -45,12 +45,12 @@ export function ScoreEditDialog({
 
     const numValue = parseFloat(scoreValue);
     if (isNaN(numValue) || numValue < 0) {
-      toast.error("Please enter a valid score");
+      toast.error("Lütfen geçerli bir puan girin");
       return;
     }
 
     if (numValue > maxScore) {
-      toast.error(`Score cannot exceed maximum score of ${maxScore}`);
+      toast.error(`Puan maksimum puandan (${maxScore}) fazla olamaz`);
       return;
     }
 
@@ -66,12 +66,12 @@ export function ScoreEditDialog({
         questionId,
         scoreValue: numValue,
       } as SubmitScoreDto);
-      toast.success("Score updated successfully");
+      toast.success("Puan başarıyla güncellendi");
       onOpenChange(false);
       onSuccess?.();
     } catch (error: any) {
       const errorMessage =
-        error.response?.data?.message || "Failed to update score";
+        error.response?.data?.message || "Puan güncellenemedi";
       toast.error(errorMessage);
     } finally {
       setIsSubmitting(false);
@@ -84,14 +84,14 @@ export function ScoreEditDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent onClose={() => onOpenChange(false)}>
         <DialogHeader>
-          <DialogTitle>Edit Score</DialogTitle>
+          <DialogTitle>Puanı Düzenle</DialogTitle>
           <DialogDescription>
-            Update the score value. Maximum score: {maxScore}
+            Puan değerini güncelleyin. Maksimum puan: {maxScore}
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4 py-4">
           <div className="space-y-2">
-            <Label htmlFor="scoreValue">Score Value</Label>
+            <Label htmlFor="scoreValue">Puan Değeri</Label>
             <Input
               id="scoreValue"
               type="number"
@@ -110,10 +110,10 @@ export function ScoreEditDialog({
             onClick={() => onOpenChange(false)}
             disabled={isSubmitting}
           >
-            Cancel
+            İptal
           </Button>
           <Button onClick={handleSubmit} disabled={isSubmitting}>
-            {isSubmitting ? "Saving..." : "Save Score"}
+            {isSubmitting ? "Kaydediliyor..." : "Puanı Kaydet"}
           </Button>
         </DialogFooter>
       </DialogContent>

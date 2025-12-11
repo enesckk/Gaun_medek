@@ -9,15 +9,22 @@ import {
   Target,
   TrendingUp,
   BarChart3,
+  GraduationCap,
+  Loader2,
+  ArrowLeft,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { LOAchievementTable } from "@/components/reports/LOAchievementTable";
 import { POAchievementTable } from "@/components/reports/POAchievementTable";
 import { LOProgressCard } from "@/components/reports/LOProgressCard";
 import { POProgressCard } from "@/components/reports/POProgressCard";
 import { StudentComparisonChart } from "@/components/reports/StudentComparisonChart";
 import { HeatmapChart } from "@/components/reports/HeatmapChart";
+import { LOAchievementBarChart } from "@/components/reports/LOAchievementBarChart";
+import { POAchievementBarChart } from "@/components/reports/POAchievementBarChart";
+import { CourseSummaryCard } from "@/components/reports/CourseSummaryCard";
 import { courseApi, type Course } from "@/lib/api/courseApi";
 import { examApi, type Exam } from "@/lib/api/examApi";
 import { studentApi, type Student } from "@/lib/api/studentApi";
@@ -77,7 +84,7 @@ export default function CourseReportPage() {
       setLOAchievements(loData);
       setPOAchievements(poData);
     } catch (error: any) {
-      toast.error("Failed to load report data");
+      toast.error("Rapor verileri yüklenemedi");
       console.error(error);
       router.push("/reports");
     } finally {
@@ -87,10 +94,14 @@ export default function CourseReportPage() {
 
   if (isLoading) {
     return (
-      <div className="space-y-6">
-        <div>
-          <h2 className="text-3xl font-bold tracking-tight">MÜDEK Report</h2>
-          <p className="text-muted-foreground">Loading report data...</p>
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 p-6">
+        <div className="max-w-7xl mx-auto">
+          <div className="flex items-center justify-center min-h-[60vh]">
+            <div className="text-center">
+              <Loader2 className="h-8 w-8 animate-spin text-[#0a294e] mx-auto mb-4" />
+              <p className="text-muted-foreground">Rapor verileri yükleniyor...</p>
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -100,85 +111,143 @@ export default function CourseReportPage() {
     return null;
   }
 
+  const department = typeof course.department === 'object' && course.department !== null
+    ? course.department.name
+    : course.department || "Bilinmiyor";
+
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-3xl font-bold tracking-tight">MÜDEK Report</h2>
-          <p className="text-muted-foreground">
-            Comprehensive accreditation report for {course.code} - {course.name}
-          </p>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 p-6">
+      <div className="max-w-7xl mx-auto space-y-6">
+        {/* Header */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => router.push("/reports")}
+                className="px-2"
+              >
+                <ArrowLeft className="h-4 w-4 mr-1" />
+                Geri
+              </Button>
+              <div className="p-2 bg-[#0a294e] rounded-lg">
+                <BarChart3 className="h-6 w-6 text-white" />
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold text-slate-900">
+                  {course.code} - {course.name}
+                </h1>
+                <p className="text-muted-foreground text-base mt-1">
+                  MÜDEK Akreditasyon Raporu
+                </p>
+              </div>
+            </div>
+            <Button
+              variant="outline"
+              onClick={() => router.push("/reports")}
+              className="h-11 px-6"
+            >
+              Raporlara Dön
+            </Button>
+          </div>
         </div>
-      </div>
+
+      {/* Course Summary Card */}
+      <CourseSummaryCard
+        loAchievements={loAchievements}
+        poAchievements={poAchievements}
+      />
 
       {/* Course Info Header */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="rounded-xl shadow-sm">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base flex items-center gap-2">
-              <BookOpen className="h-5 w-5 text-primary" />
-              Course
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold">{course.code}</p>
-            <p className="text-sm text-muted-foreground">{course.name}</p>
+        <Card className="border-2 border-slate-200">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground mb-1">Ders Kodu</p>
+                <p className="text-2xl font-bold text-slate-900">{course.code}</p>
+                <p className="text-sm text-muted-foreground mt-1">{course.name}</p>
+              </div>
+              <div className="p-3 bg-[#0a294e]/10 rounded-lg">
+                <BookOpen className="h-6 w-6 text-[#0a294e]" />
+              </div>
+            </div>
           </CardContent>
         </Card>
 
-        <Card className="rounded-xl shadow-sm">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base flex items-center gap-2">
-              <Users className="h-5 w-5 text-primary" />
-              Students
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold">{students.length}</p>
-            <p className="text-sm text-muted-foreground">Enrolled students</p>
+        <Card className="border-2 border-slate-200">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground mb-1">Öğrenciler</p>
+                <p className="text-2xl font-bold text-slate-900">{students.length}</p>
+                <p className="text-sm text-muted-foreground mt-1">Kayıtlı öğrenciler</p>
+              </div>
+              <div className="p-3 bg-slate-100 rounded-lg">
+                <Users className="h-6 w-6 text-slate-700" />
+              </div>
+            </div>
           </CardContent>
         </Card>
 
-        <Card className="rounded-xl shadow-sm">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base flex items-center gap-2">
-              <FileText className="h-5 w-5 text-primary" />
-              Exams
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold">{exams.length}</p>
-            <p className="text-sm text-muted-foreground">Total exams</p>
+        <Card className="border-2 border-slate-200">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground mb-1">Sınavlar</p>
+                <p className="text-2xl font-bold text-slate-900">{exams.length}</p>
+                <p className="text-sm text-muted-foreground mt-1">Toplam sınav</p>
+              </div>
+              <div className="p-3 bg-slate-100 rounded-lg">
+                <FileText className="h-6 w-6 text-slate-700" />
+              </div>
+            </div>
           </CardContent>
         </Card>
 
-        <Card className="rounded-xl shadow-sm">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base flex items-center gap-2">
-              <Target className="h-5 w-5 text-primary" />
-              Learning Outcomes
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold">{course.learningOutcomes?.length || 0}</p>
-            <p className="text-sm text-muted-foreground">Total LOs</p>
+        <Card className="border-2 border-slate-200">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground mb-1">Öğrenme Çıktıları</p>
+                <p className="text-2xl font-bold text-slate-900">{course.learningOutcomes?.length || 0}</p>
+                <p className="text-sm text-muted-foreground mt-1">Toplam ÖÇ</p>
+              </div>
+              <div className="p-3 bg-slate-100 rounded-lg">
+                <Target className="h-6 w-6 text-slate-700" />
+              </div>
+            </div>
           </CardContent>
         </Card>
       </div>
 
+      {/* LO Achievement Bar Chart */}
+      {loAchievements.length > 0 && (
+        <LOAchievementBarChart achievements={loAchievements} />
+      )}
+
       {/* LO Achievement Table */}
-      <Card className="rounded-xl shadow-sm">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <TrendingUp className="h-5 w-5" />
-            Learning Outcome Achievement
+      <Card className="rounded-xl shadow-sm border-2 border-slate-200">
+        <CardHeader className="bg-gradient-to-r from-slate-50 to-slate-100 border-b border-slate-200">
+          <CardTitle className="flex items-center gap-2 text-xl text-slate-900">
+            <TrendingUp className="h-5 w-5 text-[#0a294e]" />
+            Öğrenme Çıktıları (ÖÇ) Başarı Detayları
           </CardTitle>
-          <CardDescription>
-            Average achievement percentages for each Learning Outcome across all students
+          <CardDescription className="text-sm">
+            Her öğrenme çıktısı için tüm öğrenciler üzerinden ortalama başarı yüzdeleri
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          <LOAchievementTable achievements={loAchievements} />
+        <CardContent className="p-6">
+          {loAchievements.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              <Target className="h-12 w-12 mx-auto mb-4 text-slate-400" />
+              <p className="text-lg font-medium">Henüz öğrenme çıktısı başarı verisi yok</p>
+              <p className="text-sm mt-2">Sınav puanları eklendikten sonra burada görünecektir</p>
+            </div>
+          ) : (
+            <LOAchievementTable achievements={loAchievements} />
+          )}
         </CardContent>
       </Card>
 
@@ -186,8 +255,8 @@ export default function CourseReportPage() {
       {loAchievements.length > 0 && (
         <Card className="rounded-xl shadow-sm">
           <CardHeader>
-            <CardTitle>LO Achievement Overview</CardTitle>
-            <CardDescription>Visual representation of Learning Outcome achievements</CardDescription>
+            <CardTitle>ÖÇ Başarı Özeti</CardTitle>
+            <CardDescription>Öğrenme çıktıları başarılarının görsel gösterimi</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
@@ -199,19 +268,32 @@ export default function CourseReportPage() {
         </Card>
       )}
 
+      {/* PO Achievement Bar Chart */}
+      {poAchievements.length > 0 && (
+        <POAchievementBarChart achievements={poAchievements} />
+      )}
+
       {/* PO Achievement Table */}
-      <Card className="rounded-xl shadow-sm">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <BarChart3 className="h-5 w-5" />
-            Program Outcome Contribution
+      <Card className="rounded-xl shadow-sm border-2 border-slate-200">
+        <CardHeader className="bg-gradient-to-r from-slate-50 to-slate-100 border-b border-slate-200">
+          <CardTitle className="flex items-center gap-2 text-xl text-slate-900">
+            <BarChart3 className="h-5 w-5 text-[#0a294e]" />
+            Program Çıktıları (PÇ) Başarı Detayları
           </CardTitle>
-          <CardDescription>
-            Average achievement percentages for each Program Outcome
+          <CardDescription className="text-sm">
+            Her program çıktısı için ortalama başarı yüzdeleri
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          <POAchievementTable achievements={poAchievements} />
+        <CardContent className="p-6">
+          {poAchievements.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              <GraduationCap className="h-12 w-12 mx-auto mb-4 text-slate-400" />
+              <p className="text-lg font-medium">Henüz program çıktısı başarı verisi yok</p>
+              <p className="text-sm mt-2">Öğrenme çıktıları ve sınav puanları eklendikten sonra burada görünecektir</p>
+            </div>
+          ) : (
+            <POAchievementTable achievements={poAchievements} />
+          )}
         </CardContent>
       </Card>
 
@@ -219,8 +301,8 @@ export default function CourseReportPage() {
       {poAchievements.length > 0 && (
         <Card className="rounded-xl shadow-sm">
           <CardHeader>
-            <CardTitle>PO Achievement Overview</CardTitle>
-            <CardDescription>Visual representation of Program Outcome achievements</CardDescription>
+            <CardTitle>PÇ Başarı Özeti</CardTitle>
+            <CardDescription>Program çıktıları başarılarının görsel gösterimi</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
@@ -251,6 +333,7 @@ export default function CourseReportPage() {
           studentAchievements={{}}
         />
       )}
+      </div>
     </div>
   );
 }

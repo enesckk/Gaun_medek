@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { toast } from "sonner";
-import { Plus, Trash2, Loader2, ChevronDown, ChevronUp, Upload } from "lucide-react";
+import { Plus, Trash2, Loader2, ChevronDown, ChevronUp, Upload, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -314,42 +314,53 @@ export default function EditCoursePage() {
   }
 
   return (
-    <div className="min-h-screen bg-background p-6">
-      <div className="max-w-5xl mx-auto space-y-6">
+    <div className="min-h-screen bg-background p-4 sm:p-6">
+      <div className="max-w-4xl mx-auto space-y-4">
         {/* Header */}
-        <div>
-          <h1 className="text-4xl font-bold tracking-tight">Ders Düzenle</h1>
-          <p className="text-muted-foreground text-lg mt-2">
-            Ders bilgilerini güncelleyin
-          </p>
+        <div className="flex items-center gap-3">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => router.back()}
+            className="px-2"
+          >
+            <ArrowLeft className="h-4 w-4 mr-1" />
+            Geri
+          </Button>
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Ders Düzenle</h1>
+            <p className="text-muted-foreground text-sm sm:text-base mt-1">
+              Ders bilgilerini güncelleyin
+            </p>
+          </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-4">
           {/* Section 1: Course Information */}
-          <Card className="rounded-xl shadow-sm">
+          <Card className="rounded-lg shadow-sm">
             <CardHeader
-              className="cursor-pointer"
+              className="cursor-pointer py-3"
               onClick={() => toggleSection("courseInfo")}
             >
               <div className="flex items-center justify-between">
                 <div>
-                  <CardTitle className="text-2xl">1. Ders Bilgileri</CardTitle>
-                  <CardDescription className="text-base mt-2">
+                  <CardTitle className="text-base sm:text-lg">1. Ders Bilgileri</CardTitle>
+                  <CardDescription className="text-xs sm:text-sm mt-1">
                     Temel ders bilgilerini güncelleyin
                   </CardDescription>
                 </div>
                 {expandedSections.courseInfo ? (
-                  <ChevronUp className="h-6 w-6" />
+                  <ChevronUp className="h-5 w-5" />
                 ) : (
-                  <ChevronDown className="h-6 w-6" />
+                  <ChevronDown className="h-5 w-5" />
                 )}
               </div>
             </CardHeader>
             {expandedSections.courseInfo && (
-              <CardContent className="space-y-6 p-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-3">
-                    <Label htmlFor="name" className="text-lg font-semibold">
+              <CardContent className="space-y-4 p-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="name" className="text-sm">
                       Ders Adı <span className="text-destructive">*</span>
                     </Label>
                     <Input
@@ -359,17 +370,17 @@ export default function EditCoursePage() {
                       placeholder="Örn: Veri Yapıları"
                       disabled={isLoading}
                       className={cn(
-                        "h-14 text-lg",
-                        errors.name ? "border-destructive border-2" : ""
+                        "h-10 text-sm",
+                        errors.name ? "border-destructive" : ""
                       )}
                     />
                     {errors.name && (
-                      <p className="text-sm text-destructive font-medium">{errors.name}</p>
+                      <p className="text-xs text-destructive">{errors.name}</p>
                     )}
                   </div>
 
-                  <div className="space-y-3">
-                    <Label htmlFor="code" className="text-lg font-semibold">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="code" className="text-sm">
                       Ders Kodu <span className="text-destructive">*</span>
                     </Label>
                     <Input
@@ -381,19 +392,19 @@ export default function EditCoursePage() {
                       placeholder="Örn: CS201"
                       disabled={isLoading}
                       className={cn(
-                        "h-14 text-lg",
-                        errors.code ? "border-destructive border-2" : ""
+                        "h-10 text-sm",
+                        errors.code ? "border-destructive" : ""
                       )}
                     />
                     {errors.code && (
-                      <p className="text-sm text-destructive font-medium">{errors.code}</p>
+                      <p className="text-xs text-destructive">{errors.code}</p>
                     )}
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-3">
-                    <Label htmlFor="department" className="text-lg font-semibold">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="department" className="text-sm">
                       Bölüm <span className="text-red-500">*</span>
                     </Label>
                     <Select
@@ -401,7 +412,7 @@ export default function EditCoursePage() {
                       value={departmentId}
                       onChange={(e) => setDepartmentId(e.target.value)}
                       disabled={isLoading || loadingDepartments}
-                      className="h-14 text-lg"
+                      className="h-10 text-sm"
                     >
                       <option value="">Bölüm Seçin</option>
                       {departments.map((dept) => (
@@ -411,15 +422,15 @@ export default function EditCoursePage() {
                       ))}
                     </Select>
                     {loadingDepartments && (
-                      <p className="text-sm text-slate-500">Bölümler yükleniyor...</p>
+                      <p className="text-xs text-slate-500">Bölümler yükleniyor...</p>
                     )}
                     {errors.department && (
-                      <p className="text-sm font-medium text-red-600 bg-red-50 p-2 rounded-lg">{errors.department}</p>
+                      <p className="text-xs font-medium text-red-600 bg-red-50 p-2 rounded">{errors.department}</p>
                     )}
                   </div>
 
-                  <div className="space-y-3">
-                    <Label htmlFor="semester" className="text-lg font-semibold">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="semester" className="text-sm">
                       Dönem
                     </Label>
                     <Input
@@ -428,13 +439,13 @@ export default function EditCoursePage() {
                       onChange={(e) => setSemester(e.target.value)}
                       placeholder="Örn: Güz 2024"
                       disabled={isLoading}
-                      className="h-14 text-lg"
+                      className="h-10 text-sm"
                     />
                   </div>
                 </div>
 
-                <div className="space-y-3">
-                  <Label htmlFor="description" className="text-lg font-semibold">
+                <div className="space-y-1.5">
+                  <Label htmlFor="description" className="text-sm">
                     Açıklama
                   </Label>
                   <Textarea
@@ -442,9 +453,9 @@ export default function EditCoursePage() {
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
                     placeholder="Ders hakkında açıklama..."
-                    rows={4}
+                    rows={3}
                     disabled={isLoading}
-                    className="text-lg"
+                    className="text-sm"
                   />
                 </div>
               </CardContent>
@@ -452,27 +463,27 @@ export default function EditCoursePage() {
           </Card>
 
           {/* Section 2: Learning Outcomes */}
-          <Card className="rounded-xl shadow-sm">
+          <Card className="rounded-lg shadow-sm">
             <CardHeader
-              className="cursor-pointer"
+              className="cursor-pointer py-3"
               onClick={() => toggleSection("learningOutcomes")}
             >
               <div className="flex items-center justify-between">
                 <div>
-                  <CardTitle className="text-2xl">2. Öğrenme Çıktıları (ÖÇ)</CardTitle>
-                  <CardDescription className="text-base mt-2">
+                  <CardTitle className="text-base sm:text-lg">2. Öğrenme Çıktıları (ÖÇ)</CardTitle>
+                  <CardDescription className="text-xs sm:text-sm mt-1">
                     Dersin öğrenme çıktılarını güncelleyin
                   </CardDescription>
                 </div>
                 {expandedSections.learningOutcomes ? (
-                  <ChevronUp className="h-6 w-6" />
+                  <ChevronUp className="h-5 w-5" />
                 ) : (
-                  <ChevronDown className="h-6 w-6" />
+                  <ChevronDown className="h-5 w-5" />
                 )}
               </div>
             </CardHeader>
             {expandedSections.learningOutcomes && (
-              <CardContent className="space-y-6 p-6">
+              <CardContent className="space-y-4 p-4">
                 <OutcomeEditor
                   outcomes={learningOutcomes}
                   onChange={setLearningOutcomes}
@@ -485,27 +496,27 @@ export default function EditCoursePage() {
           </Card>
 
           {/* Section 3: Exam Settings */}
-          <Card className="rounded-xl shadow-sm">
+          <Card className="rounded-lg shadow-sm">
             <CardHeader
-              className="cursor-pointer"
+              className="cursor-pointer py-3"
               onClick={() => toggleSection("examSettings")}
             >
               <div className="flex items-center justify-between">
                 <div>
-                  <CardTitle className="text-2xl">4. Sınav Ayarları</CardTitle>
-                  <CardDescription className="text-base mt-2">
+                  <CardTitle className="text-base sm:text-lg">3. Sınav Ayarları</CardTitle>
+                  <CardDescription className="text-xs sm:text-sm mt-1">
                     Vize ve Final sınav kodlarını güncelleyin
                   </CardDescription>
                 </div>
                 {expandedSections.examSettings ? (
-                  <ChevronUp className="h-6 w-6" />
+                  <ChevronUp className="h-5 w-5" />
                 ) : (
-                  <ChevronDown className="h-6 w-6" />
+                  <ChevronDown className="h-5 w-5" />
                 )}
               </div>
             </CardHeader>
             {expandedSections.examSettings && (
-              <CardContent className="space-y-6 p-6">
+              <CardContent className="space-y-4 p-4">
                 <ExamSettingsComponent
                   midterm={midtermExam}
                   final={finalExam}
@@ -518,28 +529,28 @@ export default function EditCoursePage() {
             )}
           </Card>
 
-          {/* Section 5: Student Import */}
-          <Card className="rounded-xl shadow-sm">
+          {/* Section 4: Student Import */}
+          <Card className="rounded-lg shadow-sm">
             <CardHeader
-              className="cursor-pointer"
+              className="cursor-pointer py-3"
               onClick={() => toggleSection("studentImport")}
             >
               <div className="flex items-center justify-between">
                 <div>
-                  <CardTitle className="text-2xl">5. Öğrenci Listesi</CardTitle>
-                  <CardDescription className="text-base mt-2">
+                  <CardTitle className="text-base sm:text-lg">4. Öğrenci Listesi</CardTitle>
+                  <CardDescription className="text-xs sm:text-sm mt-1">
                     Öğrenci listesini güncelleyin (opsiyonel)
                   </CardDescription>
                 </div>
                 {expandedSections.studentImport ? (
-                  <ChevronUp className="h-6 w-6" />
+                  <ChevronUp className="h-5 w-5" />
                 ) : (
-                  <ChevronDown className="h-6 w-6" />
+                  <ChevronDown className="h-5 w-5" />
                 )}
               </div>
             </CardHeader>
             {expandedSections.studentImport && (
-              <CardContent className="space-y-4 p-6">
+              <CardContent className="space-y-4 p-4">
                 <StudentImporter
                   students={students}
                   onChange={setStudents}
@@ -551,22 +562,22 @@ export default function EditCoursePage() {
           </Card>
 
           {/* Fixed Submit Button */}
-          <div className="sticky bottom-0 bg-background border-t border-border p-6 -mx-6 -mb-6 shadow-lg">
-            <div className="max-w-5xl mx-auto flex justify-end gap-4">
+          <div className="sticky bottom-0 bg-background border-t border-border p-4 -mx-4 -mb-4 shadow-lg">
+            <div className="max-w-4xl mx-auto flex justify-end gap-3">
               <Button
                 type="button"
                 variant="outline"
-                size="lg"
+                size="default"
                 onClick={() => router.back()}
                 disabled={isLoading}
-                className="h-14 text-lg px-8"
+                className="h-10 text-sm px-6"
               >
                 İptal
               </Button>
-              <Button type="submit" disabled={isLoading} className="h-14 text-lg px-8">
+              <Button type="submit" disabled={isLoading} className="h-10 text-sm px-6">
                 {isLoading ? (
                   <>
-                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     Güncelleniyor...
                   </>
                 ) : (

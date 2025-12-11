@@ -32,7 +32,17 @@ export function ExamForm({ mode, examId, initialData, onSuccess }: ExamFormProps
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [courses, setCourses] = useState<Course[]>([]);
-  const [courseId, setCourseId] = useState(initialData?.courseId || "");
+  const [courseId, setCourseId] = useState(() => {
+    if (initialData?.courseId) {
+      // Handle both string and populated object
+      if (typeof initialData.courseId === 'string') {
+        return initialData.courseId;
+      } else if (typeof initialData.courseId === 'object' && initialData.courseId !== null) {
+        return initialData.courseId._id;
+      }
+    }
+    return "";
+  });
   const [examType, setExamType] = useState<"midterm" | "final">(
     initialData?.examType || "midterm"
   );
@@ -46,10 +56,38 @@ export function ExamForm({ mode, examId, initialData, onSuccess }: ExamFormProps
   const [questions, setQuestions] = useState<QuestionRow[]>(
     initialData?.questions || []
   );
+  const [existingExams, setExistingExams] = useState<Exam[]>([]);
+  const [examCodeError, setExamCodeError] = useState("");
 
   useEffect(() => {
     fetchCourses();
   }, []);
+
+  // Düzenleme modunda initialData'dan course bilgisini al ve courses array'ine ekle
+  useEffect(() => {
+    if (mode === "edit" && initialData?.courseId) {
+      const courseIdValue = typeof initialData.courseId === 'string' 
+        ? initialData.courseId 
+        : initialData.courseId._id;
+      
+      // Eğer populate edilmiş course objesi varsa, courses array'ine ekle
+      if (typeof initialData.courseId === 'object' && initialData.courseId !== null) {
+        const populatedCourse = initialData.courseId as any;
+        setCourses(prev => {
+          const exists = prev.find(c => c._id === populatedCourse._id);
+          if (!exists) {
+            return [...prev, {
+              _id: populatedCourse._id,
+              name: populatedCourse.name,
+              code: populatedCourse.code,
+              learningOutcomes: populatedCourse.learningOutcomes || [],
+            } as Course];
+          }
+          return prev;
+        });
+      }
+    }
+  }, [mode, initialData]);
 
   useEffect(() => {
     // questionCount değiştiğinde satırları otomatik üret
@@ -77,6 +115,40 @@ export function ExamForm({ mode, examId, initialData, onSuccess }: ExamFormProps
       toast.error("Dersler yüklenemedi");
     }
   };
+
+  const checkExamCode = async () => {
+    if (!courseId || !examCode.trim()) {
+      setExamCodeError("");
+      return;
+    }
+
+    try {
+      const courseExams = await examApi.getByCourse(courseId);
+      setExistingExams(courseExams);
+      const duplicate = courseExams.find(
+        (exam) => 
+          exam.examCode.trim().toLowerCase() === examCode.trim().toLowerCase() &&
+          (mode === "create" || (mode === "edit" && exam._id !== examId))
+      );
+      if (duplicate) {
+        setExamCodeError(`"${examCode.trim()}" sınav kodu bu ders için zaten mevcut. Aynı ders içinde aynı sınav kodu kullanılamaz.`);
+      } else {
+        setExamCodeError("");
+      }
+    } catch (error) {
+      console.error("Sınav kontrolü yapılamadı:", error);
+      setExamCodeError("");
+    }
+  };
+
+  useEffect(() => {
+    if (courseId && examCode.trim()) {
+      checkExamCode();
+    } else {
+      setExamCodeError("");
+      setExistingExams([]);
+    }
+  }, [courseId, examCode, mode, examId]);
 
   const selectedCourse = useMemo(
     () => courses.find((c) => c._id === courseId),
@@ -109,6 +181,10 @@ export function ExamForm({ mode, examId, initialData, onSuccess }: ExamFormProps
     }
     if (!examCode.trim()) {
       toast.error("Sınav kodu zorunludur");
+      return false;
+    }
+    if (examCodeError) {
+      toast.error(examCodeError);
       return false;
     }
     if (!questionCount || questionCount <= 0) {
@@ -149,10 +225,21 @@ export function ExamForm({ mode, examId, initialData, onSuccess }: ExamFormProps
       if (mode === "create") {
         await examApi.create(payload as CreateExamDto);
         toast.success("Sınav başarıyla oluşturuldu");
+        
+        // Dispatch event to notify other components (e.g., courses page)
+        window.dispatchEvent(new CustomEvent('examCreated', { 
+          detail: { courseId, examType: examType } 
+        }));
+        
         router.push("/exams");
       } else if (mode === "edit" && examId) {
         await examApi.update(examId, payload as UpdateExamDto);
         toast.success("Sınav başarıyla güncellendi");
+        
+        // Dispatch event to notify other components (e.g., courses page)
+        window.dispatchEvent(new CustomEvent('examUpdated', { 
+          detail: { courseId, examId } 
+        }));
       }
       onSuccess?.();
     } catch (error: any) {
@@ -217,8 +304,13 @@ export function ExamForm({ mode, examId, initialData, onSuccess }: ExamFormProps
             onChange={(e) => setExamCode(e.target.value)}
             disabled={isSubmitting}
             placeholder="Örn: VIZE-2025-1"
-            className="h-12 text-base"
+            className={`h-12 text-base ${examCodeError ? "border-red-500 focus:border-red-500" : ""}`}
           />
+          {examCodeError && (
+            <p className="text-sm text-red-600 bg-red-50 p-2 rounded-lg">
+              {examCodeError}
+            </p>
+          )}
         </div>
         <div className="space-y-2">
           <Label htmlFor="questionCount">
@@ -253,6 +345,21 @@ export function ExamForm({ mode, examId, initialData, onSuccess }: ExamFormProps
       <Card className="border-2 border-gray-200">
         <CardHeader>
           <CardTitle>Sorular → ÖÇ Seçimi</CardTitle>
+          {!courseId && (
+            <p className="text-sm text-amber-600 mt-2">
+              ⚠️ ÖÇ seçmek için önce bir ders seçmelisiniz.
+            </p>
+          )}
+          {courseId && learningOutcomeOptions.length === 0 && (
+            <p className="text-sm text-amber-600 mt-2">
+              ⚠️ Bu ders için henüz öğrenme çıktısı (ÖÇ) tanımlanmamış. Lütfen önce ders için ÖÇ ekleyin.
+            </p>
+          )}
+          {courseId && learningOutcomeOptions.length > 0 && (
+            <p className="text-sm text-muted-foreground mt-2">
+              Her soruyu ilgili öğrenme çıktısına (ÖÇ) eşleyin. MÜDEK değerlendirmesi için zorunludur.
+            </p>
+          )}
         </CardHeader>
         <CardContent className="space-y-4">
           {questionCount === 0 && (
@@ -267,14 +374,19 @@ export function ExamForm({ mode, examId, initialData, onSuccess }: ExamFormProps
                 <span className="text-sm font-semibold text-slate-600">
                   Soru {q.questionNumber}
                 </span>
+                {!q.learningOutcomeCode && (
+                  <Badge variant="outline" className="text-xs text-amber-600 border-amber-300">
+                    ÖÇ seçilmedi
+                  </Badge>
+                )}
               </div>
               <div className="space-y-1">
-                <Label>Öğrenme Çıktısı (ÖÇ)</Label>
+                <Label>Öğrenme Çıktısı (ÖÇ) <span className="text-red-500">*</span></Label>
                 <Select
                   value={q.learningOutcomeCode}
                   onChange={(e) => handleQuestionLoChange(idx, e.target.value)}
-                  disabled={isSubmitting || learningOutcomeOptions.length === 0}
-                  className="h-11"
+                  disabled={isSubmitting || learningOutcomeOptions.length === 0 || !courseId}
+                  className={`h-11 ${!q.learningOutcomeCode ? "border-amber-300" : ""}`}
                 >
                   <option value="">ÖÇ seçin</option>
                   {learningOutcomeOptions.map((opt) => (
@@ -283,6 +395,16 @@ export function ExamForm({ mode, examId, initialData, onSuccess }: ExamFormProps
                     </option>
                   ))}
                 </Select>
+                {!courseId && (
+                  <p className="text-xs text-amber-600 mt-1">
+                    Ders seçilmediği için ÖÇ seçilemiyor
+                  </p>
+                )}
+                {courseId && learningOutcomeOptions.length === 0 && (
+                  <p className="text-xs text-amber-600 mt-1">
+                    Bu ders için ÖÇ tanımlanmamış
+                  </p>
+                )}
               </div>
             </div>
           ))}

@@ -17,8 +17,9 @@ export function CourseCard({ course, onDelete }: CourseCardProps) {
   const departmentName = (course as any).department?.name || (typeof (course as any).department === "string" ? (course as any).department : "(Eski kayıt – bölüm seçilmemiş)");
   const learningOutcomeCount = course.learningOutcomes?.length || 0;
   const studentCount = course.students?.length || 0;
-  const midtermCode = course.midtermExam?.examCode || "-";
-  const finalCode = course.finalExam?.examCode || "-";
+  const examCount = course.examCount || 0;
+  const midtermExams = course.midtermExams || [];
+  const finalExams = course.finalExams || [];
   const updatedAt = course.updatedAt
     ? new Date(course.updatedAt).toLocaleDateString("tr-TR", {
         year: "numeric",
@@ -27,107 +28,135 @@ export function CourseCard({ course, onDelete }: CourseCardProps) {
       })
     : "-";
 
+  // Show exams if there are any
+  const hasExams = examCount > 0;
+
   return (
-    <Card className="rounded-xl shadow-sm hover:shadow-md transition-shadow">
-      <CardContent className="p-5">
-        <div className="space-y-4">
-          {/* Course Name - Large and Bold */}
-          <div>
-            <h3 className="text-2xl font-bold text-foreground mb-1">{course.name}</h3>
-            <p className="text-lg text-muted-foreground">Kod: {course.code}</p>
+    <Card className="rounded-xl shadow-sm hover:shadow-lg transition-all border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 h-full flex flex-col min-w-0">
+      <CardContent className="p-4 sm:p-6 flex flex-col flex-1 min-w-0">
+        <div className="space-y-4 sm:space-y-5 flex-1 min-w-0">
+          {/* Course Header */}
+          <div className="pb-3 sm:pb-4 border-b border-slate-200 dark:border-slate-700">
+            <h3 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 mb-2 line-clamp-2 break-words">
+              {course.name}
+            </h3>
+            <p className="text-sm sm:text-base text-slate-600 dark:text-slate-400 font-semibold break-words">
+              {course.code}
+            </p>
           </div>
 
-          {/* Course Details Grid */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="flex items-center gap-2">
-              <Calendar className="h-5 w-5 text-muted-foreground" />
-              <div>
-                <p className="text-sm text-muted-foreground">Dönem</p>
-                <p className="text-base font-semibold">{semester}</p>
+          {/* Course Details - Better Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+            <div className="flex items-start gap-2 sm:gap-3 min-w-0">
+              <Calendar className="h-4 w-4 sm:h-5 sm:w-5 text-slate-500 dark:text-slate-400 mt-0.5 flex-shrink-0" />
+              <div className="min-w-0 flex-1 overflow-hidden">
+                <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">Dönem</p>
+                <p className="text-sm font-semibold text-slate-700 dark:text-slate-300 truncate" title={semester}>
+                  {semester}
+                </p>
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
-              <div className="h-5 w-5 text-muted-foreground flex items-center justify-center">
-                <span className="text-xs">🏛️</span>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Bölüm</p>
-                <p className="text-base font-semibold">{departmentName}</p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <Target className="h-5 w-5 text-muted-foreground" />
-              <div>
-                <p className="text-sm text-muted-foreground">ÖÇ Sayısı</p>
-                <p className="text-base font-semibold">{learningOutcomeCount}</p>
+            <div className="flex items-start gap-2 sm:gap-3 min-w-0">
+              <Target className="h-4 w-4 sm:h-5 sm:w-5 text-slate-500 dark:text-slate-400 mt-0.5 flex-shrink-0" />
+              <div className="min-w-0 flex-1 overflow-hidden">
+                <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">Öğrenme Çıktısı</p>
+                <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                  {learningOutcomeCount} adet
+                </p>
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
-              <Users className="h-5 w-5 text-muted-foreground" />
-              <div>
-                <p className="text-sm text-muted-foreground">Öğrenci Sayısı</p>
-                <p className="text-base font-semibold">{studentCount}</p>
+            <div className="flex items-start gap-2 sm:gap-3 min-w-0">
+              <Users className="h-4 w-4 sm:h-5 sm:w-5 text-slate-500 dark:text-slate-400 mt-0.5 flex-shrink-0" />
+              <div className="min-w-0 flex-1 overflow-hidden">
+                <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">Öğrenci</p>
+                <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                  {studentCount} kişi
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-start gap-2 sm:gap-3 min-w-0">
+              <FileText className="h-4 w-4 sm:h-5 sm:w-5 text-slate-500 dark:text-slate-400 mt-0.5 flex-shrink-0" />
+              <div className="min-w-0 flex-1 overflow-hidden">
+                <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">Sınav</p>
+                <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                  {examCount} adet
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-start gap-2 sm:gap-3 min-w-0">
+              <div className="h-4 w-4 sm:h-5 sm:w-5 text-slate-500 dark:text-slate-400 mt-0.5 flex-shrink-0 flex items-center justify-center">
+                <span className="text-xs sm:text-sm">🏛️</span>
+              </div>
+              <div className="min-w-0 flex-1 overflow-hidden">
+                <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">Bölüm</p>
+                <p className="text-sm font-semibold text-slate-700 dark:text-slate-300 truncate" title={departmentName}>
+                  {departmentName}
+                </p>
               </div>
             </div>
           </div>
 
-          {/* Exam Codes */}
-          <div className="flex items-center gap-4 pt-2 border-t border-border">
-            <div className="flex items-center gap-2">
-              <FileText className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm text-muted-foreground">Vize:</span>
-              <Badge variant="outline" className="text-base px-3 py-1">
-                {midtermCode}
-              </Badge>
+          {/* Exam Codes - Show all exams */}
+          {hasExams && (
+            <div className="space-y-2 pt-2 border-t border-slate-200 dark:border-slate-700">
+              {midtermExams.length > 0 && (
+                <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+                  <span className="text-xs text-slate-500 dark:text-slate-400 whitespace-nowrap font-medium">Vize:</span>
+                  {midtermExams.map((exam, idx) => (
+                    <Badge key={idx} variant="outline" className="text-xs px-1.5 sm:px-2 py-0.5 h-5 whitespace-nowrap">
+                      {exam.examCode}
+                    </Badge>
+                  ))}
+                </div>
+              )}
+              {finalExams.length > 0 && (
+                <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+                  <span className="text-xs text-slate-500 dark:text-slate-400 whitespace-nowrap font-medium">Final:</span>
+                  {finalExams.map((exam, idx) => (
+                    <Badge key={idx} variant="outline" className="text-xs px-1.5 sm:px-2 py-0.5 h-5 whitespace-nowrap">
+                      {exam.examCode}
+                    </Badge>
+                  ))}
+                </div>
+              )}
             </div>
-            <div className="flex items-center gap-2">
-              <FileText className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm text-muted-foreground">Final:</span>
-              <Badge variant="outline" className="text-base px-3 py-1">
-                {finalCode}
-              </Badge>
-            </div>
-          </div>
+          )}
 
-          {/* Last Updated */}
-          <div className="text-sm text-muted-foreground">
-            Son güncelleme: {updatedAt}
-          </div>
-
-          {/* Action Buttons */}
-          <div className="flex gap-3 pt-2 border-t border-border">
+          {/* Action Buttons - Responsive */}
+          <div className="flex flex-col sm:flex-row gap-2 pt-3 sm:pt-4 border-t border-slate-200 dark:border-slate-700 mt-auto">
             <Button
               asChild
               variant="default"
-              size="lg"
-              className="flex-1 h-12 text-base font-semibold"
+              size="default"
+              className="flex-1 h-10 sm:h-11 text-sm sm:text-base font-semibold bg-[#0a294e] hover:bg-[#0a294e]/90 min-w-0"
             >
-              <Link href={`/dashboard/courses/${course._id}`}>
-                <FileText className="h-5 w-5 mr-2" />
-                Detay
+              <Link href={`/dashboard/courses/${course._id}`} className="flex items-center justify-center min-w-0">
+                <FileText className="h-4 w-4 sm:h-5 sm:w-5 mr-1 sm:mr-2 flex-shrink-0" />
+                <span className="truncate">Detay</span>
               </Link>
             </Button>
             <Button
               asChild
               variant="outline"
-              size="lg"
-              className="flex-1 h-12 text-base font-semibold"
+              size="default"
+              className="flex-1 h-10 sm:h-11 text-sm sm:text-base font-semibold min-w-0"
             >
-              <Link href={`/dashboard/courses/edit/${course._id}`}>
-                <Edit className="h-5 w-5 mr-2" />
-                Düzenle
+              <Link href={`/dashboard/courses/edit/${course._id}`} className="flex items-center justify-center min-w-0">
+                <Edit className="h-4 w-4 sm:h-5 sm:w-5 mr-1 sm:mr-2 flex-shrink-0" />
+                <span className="truncate">Düzenle</span>
               </Link>
             </Button>
             <Button
               variant="destructive"
-              size="lg"
+              size="default"
               onClick={() => onDelete(course)}
-              className="h-12 text-base font-semibold px-4"
+              className="h-10 sm:h-11 text-sm sm:text-base font-semibold px-3 sm:px-4 flex-shrink-0"
             >
-              <Trash2 className="h-5 w-5" />
+              <Trash2 className="h-4 w-4 sm:h-5 sm:w-5" />
             </Button>
           </div>
         </div>

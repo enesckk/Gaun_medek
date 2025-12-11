@@ -12,8 +12,8 @@ export function ProcessingStatusCard({ steps }: ProcessingStatusCardProps) {
   return (
     <Card className="rounded-xl shadow-sm">
       <CardHeader>
-        <CardTitle>Processing Exam Document</CardTitle>
-        <CardDescription>AI is analyzing your document...</CardDescription>
+        <CardTitle>Sınav Belgesi İşleniyor</CardTitle>
+        <CardDescription>AI belgenizi analiz ediyor...</CardDescription>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">

@@ -3,14 +3,16 @@
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Loader2, ArrowLeft, Edit, FileText, Target, GraduationCap, Download } from "lucide-react";
+import { Loader2, ArrowLeft, Edit, FileText, Target, GraduationCap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { courseApi, type Course } from "@/lib/api/courseApi";
 import { programOutcomeApi, type ProgramOutcome } from "@/lib/api/programOutcomeApi";
+import { examApi, type Exam } from "@/lib/api/examApi";
 import { LearningOutcomeMapping } from "@/components/courses/LearningOutcomeMapping";
+import { MudekMatrixView } from "@/components/courses/MudekMatrixView";
 
 export default function CourseDetailPage() {
   const params = useParams();
@@ -18,6 +20,7 @@ export default function CourseDetailPage() {
   const courseId = params.id as string;
 
   const [course, setCourse] = useState<Course | null>(null);
+  const [exams, setExams] = useState<Exam[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("overview");
 
@@ -30,8 +33,12 @@ export default function CourseDetailPage() {
   const loadCourse = async () => {
     try {
       setIsLoading(true);
-      const data = await courseApi.getById(courseId);
-      setCourse(data);
+      const [courseData, examsData] = await Promise.all([
+        courseApi.getById(courseId),
+        examApi.getByCourse(courseId).catch(() => []) // If fails, return empty array
+      ]);
+      setCourse(courseData);
+      setExams(examsData);
     } catch (error: any) {
       toast.error(error?.response?.data?.message || "Ders bilgileri yüklenemedi");
       router.push("/dashboard/courses");
@@ -155,25 +162,67 @@ export default function CourseDetailPage() {
                       {course.students?.length || 0}
                     </p>
                   </div>
-                  {(course as any).midtermExam && (
-                    <div>
-                      <p className="text-sm text-muted-foreground">Vize Sınav Kodu</p>
-                      <Badge variant="outline" className="text-lg px-3 py-1">
-                        {(course as any).midtermExam.examCode}
-                      </Badge>
-                    </div>
-                  )}
-                  {(course as any).finalExam && (
-                    <div>
-                      <p className="text-sm text-muted-foreground">Final Sınav Kodu</p>
-                      <Badge variant="outline" className="text-lg px-3 py-1">
-                        {(course as any).finalExam.examCode}
-                      </Badge>
-                    </div>
-                  )}
+                  <div>
+                    <p className="text-sm text-muted-foreground">Toplam Sınav Sayısı</p>
+                    <p className="text-3xl font-bold text-[#0a294e]">
+                      {exams.length}
+                    </p>
+                  </div>
                 </CardContent>
               </Card>
             </div>
+
+            {/* Exams List */}
+            {exams.length > 0 && (
+              <Card className="border-2 border-[#0a294e]/20">
+                <CardHeader>
+                  <CardTitle className="text-2xl text-[#0a294e]">Sınavlar</CardTitle>
+                  <CardDescription>
+                    Bu derse ait tüm sınavların listesi
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {exams.filter(e => e.examType === "midterm").length > 0 && (
+                      <div>
+                        <p className="text-sm font-semibold text-muted-foreground mb-2">Vize Sınavları</p>
+                        <div className="flex flex-wrap gap-2">
+                          {exams
+                            .filter(e => e.examType === "midterm")
+                            .map((exam) => (
+                              <Badge 
+                                key={exam._id} 
+                                variant="outline" 
+                                className="text-base px-3 py-1.5"
+                              >
+                                {exam.examCode}
+                              </Badge>
+                            ))}
+                        </div>
+                      </div>
+                    )}
+                    {exams.filter(e => e.examType === "final").length > 0 && (
+                      <div>
+                        <p className="text-sm font-semibold text-muted-foreground mb-2">Final Sınavları</p>
+                        <div className="flex flex-wrap gap-2">
+                          {exams
+                            .filter(e => e.examType === "final")
+                            .map((exam) => (
+                              <Badge 
+                                key={exam._id} 
+                                variant="outline" 
+                                className="text-base px-3 py-1.5"
+                              >
+                                {exam.examCode}
+                              </Badge>
+                            ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
             {/* Learning Outcomes List */}
             {course.learningOutcomes && course.learningOutcomes.length > 0 && (
@@ -236,7 +285,22 @@ export default function CourseDetailPage() {
 
           {/* MÜDEK Matrix Tab */}
           <TabsContent value="matrix">
-            <MudekMatrix courseId={courseId} course={course} />
+            {departmentId ? (
+              <MudekMatrixView
+                courseId={courseId}
+                course={course}
+                departmentId={departmentId}
+                onUpdate={loadCourse}
+              />
+            ) : (
+              <Card className="border-2 border-yellow-200">
+                <CardContent className="p-8 text-center">
+                  <p className="text-lg text-muted-foreground">
+                    Bu ders için bölüm bilgisi bulunamadı. MÜDEK matrisi görüntülemek için lütfen dersi düzenleyip bölüm seçin.
+                  </p>
+                </CardContent>
+              </Card>
+            )}
           </TabsContent>
         </Tabs>
       </div>
@@ -244,124 +308,4 @@ export default function CourseDetailPage() {
   );
 }
 
-// MÜDEK Matrix Component
-function MudekMatrix({ courseId, course }: { courseId: string; course: Course }) {
-  const [matrix, setMatrix] = useState<any>(null);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    loadMatrix();
-  }, [courseId]);
-
-  const loadMatrix = async () => {
-    try {
-      setIsLoading(true);
-      const data = await courseApi.getMatrix(courseId);
-      setMatrix(data.data);
-    } catch (error: any) {
-      console.error("Matrix yüklenirken hata:", error);
-      toast.error(error?.response?.data?.message || "Matris yüklenemedi");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleExportPDF = () => {
-    window.print();
-  };
-
-  if (isLoading) {
-    return (
-      <Card className="border-2 border-[#0a294e]/20">
-        <CardContent className="p-12 text-center">
-          <Loader2 className="h-8 w-8 animate-spin text-[#0a294e] mx-auto mb-4" />
-          <p className="text-lg text-muted-foreground">Matris yükleniyor...</p>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (!matrix || !matrix.rows || matrix.rows.length === 0) {
-    return (
-      <Card className="border-2 border-yellow-200">
-        <CardContent className="p-8 text-center">
-          <p className="text-lg text-muted-foreground">
-            Bu ders için MÜDEK matrisi oluşturulamadı. Öğrenme çıktıları ve program çıktıları tanımlanmış olmalıdır.
-          </p>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  return (
-    <Card className="border-2 border-[#0a294e]/20">
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle className="text-2xl text-[#0a294e]">MÜDEK ÖÇ → PÇ Matrisi</CardTitle>
-            <CardDescription className="text-base mt-2">
-              Öğrenme Çıktıları (ÖÇ) ve Program Çıktıları (PÇ) arasındaki ilişki matrisi
-            </CardDescription>
-          </div>
-          <Button onClick={handleExportPDF} className="h-11 px-5 bg-[#0a294e] hover:bg-[#0a294e]/90">
-            <Download className="h-4 w-4 mr-2" />
-            PDF İndir
-          </Button>
-        </div>
-      </CardHeader>
-      <CardContent>
-        <div className="overflow-x-auto">
-          <table className="w-full border-collapse border-2 border-gray-300 text-sm">
-            <thead>
-              <tr>
-                <th className="border-2 border-gray-300 p-3 bg-[#0a294e] text-white text-left font-semibold">
-                  ÖÇ / PÇ
-                </th>
-                {matrix.columns.map((pc: string) => (
-                  <th
-                    key={pc}
-                    className="border-2 border-gray-300 p-3 bg-[#0a294e] text-white text-center font-semibold"
-                  >
-                    {pc}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {matrix.rows.map((row: any) => (
-                <tr key={row.ocCode} className="hover:bg-gray-50">
-                  <td className="border-2 border-gray-300 p-3 font-semibold bg-gray-100">
-                    {row.ocCode}
-                  </td>
-                  {matrix.columns.map((pc: string) => (
-                    <td
-                      key={pc}
-                      className="border-2 border-gray-300 p-3 text-center"
-                    >
-                      {row.mapping[pc] === 1 ? (
-                        <span className="inline-block w-8 h-8 rounded-full bg-green-500 text-white flex items-center justify-center font-bold">
-                          ✓
-                        </span>
-                      ) : (
-                        <span className="inline-block w-8 h-8 rounded-full bg-gray-200 text-gray-500 flex items-center justify-center">
-                          -
-                        </span>
-                      )}
-                    </td>
-                  ))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
-          <p className="text-sm text-blue-800">
-            <strong>Açıklama:</strong> Bu matris, her Öğrenme Çıktısının (ÖÇ) hangi Program Çıktılarına (PÇ) katkıda bulunduğunu gösterir. 
-            ✓ işareti, ilgili ÖÇ'nin o PÇ'ye katkıda bulunduğunu gösterir.
-          </p>
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
 

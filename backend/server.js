@@ -68,7 +68,17 @@ async function startServer() {
       console.log(`Backend running at http://localhost:${PORT}`)
     );
   } catch (err) {
-    console.error("❌ MongoDB bağlantı hatası:", err);
+    console.error("❌ MongoDB bağlantı hatası:", err.message);
+    
+    // ECONNREFUSED hatası MongoDB servisinin çalışmadığını gösterir
+    if (err.message.includes("ECONNREFUSED") || err.message.includes("connect")) {
+      console.error("\n💡 MongoDB servisi çalışmıyor. Lütfen MongoDB'yi başlatın:");
+      console.error("   Windows: Yönetici olarak PowerShell açın ve şu komutu çalıştırın:");
+      console.error("   Start-Service -Name MongoDB");
+      console.error("\n   Veya Windows Services (services.msc) üzerinden 'MongoDB Server' servisini başlatın.");
+      console.error(`\n   Bağlantı URI: ${MONGO_URI}`);
+    }
+    
     process.exit(1);
   }
 }

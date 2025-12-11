@@ -48,13 +48,29 @@ export default function ExamUploadPage() {
     try {
       const examData = await examApi.getById(examId);
       setExam(examData);
-      const courseData = await courseApi.getById(examData.courseId);
+      
+      // Ensure courseId is a string
+      let courseId: string;
+      if (typeof examData.courseId === 'string') {
+        courseId = examData.courseId;
+      } else if (examData.courseId && typeof examData.courseId === 'object' && '_id' in examData.courseId) {
+        courseId = String((examData.courseId as any)._id);
+      } else {
+        courseId = String(examData.courseId || '');
+      }
+      
+      if (!courseId || courseId === 'undefined' || courseId === 'null' || courseId === '[object Object]') {
+        throw new Error('Geçersiz ders ID');
+      }
+      
+      const courseData = await courseApi.getById(courseId);
       setCourse(courseData);
       if (courseData?.students?.length) {
         setStudentNumber(courseData.students[0].studentNumber);
       }
     } catch (error: any) {
-      toast.error("Sınav bilgisi alınamadı");
+      console.error('Error loading exam:', error);
+      toast.error(error?.message || "Sınav bilgisi alınamadı");
     }
   };
 

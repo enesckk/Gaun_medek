@@ -149,18 +149,18 @@ export function StudentImporter({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {errors.students && (
-        <p className="text-base text-destructive font-medium">{errors.students}</p>
+        <p className="text-sm text-destructive font-medium">{errors.students}</p>
       )}
 
       {/* File Upload */}
-      <Card className="rounded-xl shadow-sm border-2">
-        <CardHeader>
+      <Card className="rounded-lg shadow-sm border">
+        <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle className="text-2xl">Dosyadan Yükle</CardTitle>
-              <CardDescription className="text-base">
+              <CardTitle className="text-base">Dosyadan Yükle</CardTitle>
+              <CardDescription className="text-xs">
                 Öğrenci listesini içeren dosyayı yükleyin (.docx, .txt, .csv)
               </CardDescription>
             </div>
@@ -169,19 +169,19 @@ export function StudentImporter({
               variant="outline"
               onClick={downloadTemplate}
               disabled={disabled}
-              className="h-11 px-4"
+              className="h-9 px-3 text-xs"
             >
-              <Download className="h-4 w-4 mr-2" />
-              Şablon İndir
+              <Download className="h-3 w-3 mr-1" />
+              Şablon
             </Button>
           </div>
         </CardHeader>
-        <CardContent className="p-6">
-          <div className="border-2 border-dashed rounded-xl p-8 text-center hover:border-primary/50 transition-colors">
-            <Upload className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+        <CardContent className="p-4">
+          <div className="border-2 border-dashed rounded-lg p-4 text-center hover:border-primary/50 transition-colors">
+            <Upload className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
             <Label
               htmlFor="student-file"
-              className="cursor-pointer text-lg font-semibold text-primary hover:underline"
+              className="cursor-pointer text-sm font-semibold text-primary hover:underline"
             >
               Öğrenci Listesini Yükle (.docx, .txt, .csv)
             </Label>
@@ -193,13 +193,13 @@ export function StudentImporter({
               disabled={disabled}
               className="hidden"
             />
-            <div className="mt-4 p-3 bg-[#0a294e]/5 rounded-lg border border-[#0a294e]/10">
-              <div className="flex items-start gap-2 text-sm text-[#0a294e]">
-                <Info className="h-4 w-4 mt-0.5 flex-shrink-0" />
+            <div className="mt-3 p-2 bg-[#0a294e]/5 rounded border border-[#0a294e]/10">
+              <div className="flex items-start gap-2 text-xs text-[#0a294e]">
+                <Info className="h-3 w-3 mt-0.5 flex-shrink-0" />
                 <div className="text-left">
-                  <p className="font-semibold mb-1">Format:</p>
+                  <p className="font-semibold mb-0.5">Format:</p>
                   <p>Her satırda "ÖğrenciNo Ad Soyad" şeklinde olmalıdır.</p>
-                  <p className="mt-1 text-xs">Örnek: 20231021 Ahmet Yılmaz</p>
+                  <p className="mt-0.5 text-xs">Örnek: 20231021 Ahmet Yılmaz</p>
                 </div>
               </div>
             </div>
@@ -208,17 +208,17 @@ export function StudentImporter({
       </Card>
 
       {/* Manual Add */}
-      <Card className="rounded-xl shadow-sm border-2">
-        <CardHeader>
-          <CardTitle className="text-2xl">Manuel Ekle</CardTitle>
-          <CardDescription className="text-base">
+      <Card className="rounded-lg shadow-sm border">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">Manuel Ekle</CardTitle>
+          <CardDescription className="text-xs">
             Öğrenci bilgilerini manuel olarak girin
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4 p-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="manual-student-number" className="text-lg font-semibold">
+        <CardContent className="space-y-3 p-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div className="space-y-1.5">
+              <Label htmlFor="manual-student-number" className="text-sm">
                 Öğrenci No <span className="text-destructive">*</span>
               </Label>
               <Input
@@ -227,12 +227,12 @@ export function StudentImporter({
                 onChange={(e) => setManualStudentNumber(e.target.value)}
                 placeholder="20231021"
                 disabled={disabled}
-                className="h-14 text-lg"
+                className="h-10 text-sm"
               />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="manual-full-name" className="text-lg font-semibold">
+            <div className="space-y-1.5">
+              <Label htmlFor="manual-full-name" className="text-sm">
                 Ad Soyad <span className="text-destructive">*</span>
               </Label>
               <Input
@@ -241,7 +241,7 @@ export function StudentImporter({
                 onChange={(e) => setManualFullName(e.target.value)}
                 placeholder="Ahmet Yılmaz"
                 disabled={disabled}
-                className="h-14 text-lg"
+                className="h-10 text-sm"
                 onKeyDown={(e) => {
                   if (e.key === "Enter") {
                     e.preventDefault();
@@ -256,9 +256,9 @@ export function StudentImporter({
                 type="button"
                 onClick={addManualStudent}
                 disabled={disabled}
-                className="w-full h-14 text-lg font-semibold"
+                className="w-full h-10 text-sm"
               >
-                <Plus className="h-6 w-6 mr-2" />
+                <Plus className="h-4 w-4 mr-1" />
                 Ekle
               </Button>
             </div>
@@ -268,32 +268,32 @@ export function StudentImporter({
 
       {/* Students Preview Table */}
       {students.length > 0 && (
-        <Card className="rounded-xl shadow-sm border-2">
-          <CardHeader>
-            <CardTitle className="text-2xl">
+        <Card className="rounded-lg shadow-sm border">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">
               Öğrenci Listesi ({students.length} öğrenci)
             </CardTitle>
-            <CardDescription className="text-base">
+            <CardDescription className="text-xs">
               Eklenen öğrencilerin listesi
             </CardDescription>
           </CardHeader>
-          <CardContent className="p-6">
-            <div className="rounded-md border overflow-hidden">
+          <CardContent className="p-4">
+            <div className="rounded-md border overflow-hidden max-h-[200px] overflow-y-auto">
               <Table>
                 <TableHeader>
                   <TableRow className="bg-muted/50">
-                    <TableHead className="text-lg font-semibold">Öğrenci No</TableHead>
-                    <TableHead className="text-lg font-semibold">Ad Soyad</TableHead>
-                    <TableHead className="text-lg font-semibold text-right">İşlem</TableHead>
+                    <TableHead className="text-sm font-semibold">Öğrenci No</TableHead>
+                    <TableHead className="text-sm font-semibold">Ad Soyad</TableHead>
+                    <TableHead className="text-sm font-semibold text-right">İşlem</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {students.map((student, index) => (
                     <TableRow key={index}>
-                      <TableCell className="text-lg font-medium">
+                      <TableCell className="text-sm font-medium">
                         {student.studentNumber}
                       </TableCell>
-                      <TableCell className="text-lg">{student.fullName}</TableCell>
+                      <TableCell className="text-sm">{student.fullName}</TableCell>
                       <TableCell className="text-right">
                         <Button
                           type="button"
@@ -301,8 +301,9 @@ export function StudentImporter({
                           size="icon"
                           onClick={() => removeStudent(index)}
                           disabled={disabled}
+                          className="h-8 w-8"
                         >
-                          <Trash2 className="h-5 w-5 text-destructive" />
+                          <Trash2 className="h-4 w-4 text-destructive" />
                         </Button>
                       </TableCell>
                     </TableRow>

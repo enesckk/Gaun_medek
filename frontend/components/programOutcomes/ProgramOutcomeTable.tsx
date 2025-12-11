@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { Edit, Trash2 } from "lucide-react";
 import {
   Table,
@@ -11,27 +10,37 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { type ProgramOutcome } from "@/lib/api/programOutcomeApi";
 import { DeleteProgramOutcomeDialog } from "./DeleteProgramOutcomeDialog";
+import { EditProgramOutcomeDialog } from "./EditProgramOutcomeDialog";
 import { useState } from "react";
 
 interface ProgramOutcomeTableProps {
   programOutcomes: ProgramOutcome[];
   learningOutcomeCounts: Record<string, number>;
+  departmentId?: string;
   onDelete?: () => void;
 }
 
 export function ProgramOutcomeTable({
   programOutcomes,
   learningOutcomeCounts,
+  departmentId,
   onDelete,
 }: ProgramOutcomeTableProps) {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [selectedProgramOutcome, setSelectedProgramOutcome] = useState<ProgramOutcome | null>(null);
 
   const handleDeleteClick = (programOutcome: ProgramOutcome) => {
     setSelectedProgramOutcome(programOutcome);
     setDeleteDialogOpen(true);
+  };
+
+  const handleEditClick = (programOutcome: ProgramOutcome) => {
+    setSelectedProgramOutcome(programOutcome);
+    setEditDialogOpen(true);
   };
 
   const handleDeleteSuccess = () => {
@@ -40,10 +49,16 @@ export function ProgramOutcomeTable({
     onDelete?.();
   };
 
+  const handleEditSuccess = () => {
+    setEditDialogOpen(false);
+    setSelectedProgramOutcome(null);
+    onDelete?.();
+  };
+
   if (programOutcomes.length === 0) {
     return (
       <div className="text-center py-8 text-muted-foreground">
-        No program outcomes found
+        Program çıktısı bulunamadı
       </div>
     );
   }
@@ -54,40 +69,46 @@ export function ProgramOutcomeTable({
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Code</TableHead>
-              <TableHead>Description</TableHead>
-              <TableHead className="text-center">Learning Outcomes Count</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
+              <TableHead className="w-[120px]">PÇ Kodu</TableHead>
+              <TableHead>Açıklama</TableHead>
+              <TableHead className="text-center w-[150px]">Öğrenme Çıktıları</TableHead>
+              <TableHead className="text-right w-[100px]">İşlemler</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {programOutcomes.map((programOutcome, index) => (
               <TableRow
-                key={programOutcome._id}
+                key={`${programOutcome.code}-${index}`}
                 className={index % 2 === 0 ? "bg-background" : "bg-muted/50"}
               >
-                <TableCell className="font-medium">{programOutcome.code}</TableCell>
+                <TableCell className="font-semibold">
+                  <Badge variant="default" className="bg-[#0a294e] text-white">
+                    {programOutcome.code}
+                  </Badge>
+                </TableCell>
                 <TableCell className="max-w-md">
-                  {programOutcome.description}
+                  <p className="text-sm">{programOutcome.description}</p>
                 </TableCell>
                 <TableCell className="text-center">
-                  {learningOutcomeCounts[programOutcome._id] || 0}
+                  <Badge variant="outline" className="font-medium">
+                    {learningOutcomeCounts[programOutcome.code] || 0} ÖÇ
+                  </Badge>
                 </TableCell>
                 <TableCell className="text-right">
                   <div className="flex justify-end gap-2">
                     <Button
                       variant="outline"
                       size="icon"
-                      asChild
+                      onClick={() => handleEditClick(programOutcome)}
+                      className="h-8 w-8"
                     >
-                      <Link href={`/program-outcomes/${programOutcome._id}`}>
-                        <Edit className="h-4 w-4" />
-                      </Link>
+                      <Edit className="h-4 w-4" />
                     </Button>
                     <Button
                       variant="destructive"
                       size="icon"
                       onClick={() => handleDeleteClick(programOutcome)}
+                      className="h-8 w-8"
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -99,14 +120,23 @@ export function ProgramOutcomeTable({
         </Table>
       </div>
 
-      {selectedProgramOutcome && (
-        <DeleteProgramOutcomeDialog
-          programOutcomeId={selectedProgramOutcome._id}
-          programOutcomeCode={selectedProgramOutcome.code}
-          open={deleteDialogOpen}
-          onOpenChange={setDeleteDialogOpen}
-          onSuccess={handleDeleteSuccess}
-        />
+      {selectedProgramOutcome && departmentId && (
+        <>
+          <EditProgramOutcomeDialog
+            departmentId={departmentId}
+            programOutcome={selectedProgramOutcome}
+            open={editDialogOpen}
+            onOpenChange={setEditDialogOpen}
+            onSuccess={handleEditSuccess}
+          />
+          <DeleteProgramOutcomeDialog
+            departmentId={departmentId}
+            programOutcomeCode={selectedProgramOutcome.code}
+            open={deleteDialogOpen}
+            onOpenChange={setDeleteDialogOpen}
+            onSuccess={handleDeleteSuccess}
+          />
+        </>
       )}
     </>
   );

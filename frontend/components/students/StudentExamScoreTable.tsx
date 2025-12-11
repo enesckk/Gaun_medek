@@ -31,16 +31,16 @@ export function StudentExamScoreTable({ scores }: StudentExamScoreTableProps) {
 
   const formatType = (type: string) => {
     const typeMap: Record<string, string> = {
-      midterm: "Midterm",
+      midterm: "Vize",
       final: "Final",
-      makeup: "Makeup",
+      makeup: "Bütünleme",
     };
     return typeMap[type] || type;
   };
 
   const getExamTitle = (score: Score): string => {
-    if (typeof score.examId === "string") return "Unknown Exam";
-    return score.examId.title || "Unknown Exam";
+    if (typeof score.examId === "string") return "Bilinmeyen Sınav";
+    return score.examId.title || score.examId.examCode || "Bilinmeyen Sınav";
   };
 
   const getExamType = (score: Score): string => {
@@ -83,8 +83,9 @@ export function StudentExamScoreTable({ scores }: StudentExamScoreTableProps) {
 
   if (scores.length === 0) {
     return (
-      <div className="text-center py-8 text-muted-foreground">
-        No scores found for this student.
+      <div className="text-center py-12 text-muted-foreground border-2 border-dashed rounded-lg">
+        <p className="text-lg font-medium">Bu öğrenci için henüz sınav puanı bulunmamaktadır</p>
+        <p className="text-sm mt-2">Sınav puanları AI puanlama veya manuel giriş ile eklendikten sonra burada görünecektir</p>
       </div>
     );
   }
@@ -97,23 +98,43 @@ export function StudentExamScoreTable({ scores }: StudentExamScoreTableProps) {
         const examType = getExamType(firstScore);
         const examDate = firstScore.createdAt ? formatDate(firstScore.createdAt) : "-";
 
+        // Calculate total score for this exam
+        const totalScore = examScores.reduce((sum, s) => sum + s.scoreValue, 0);
+        const totalMaxScore = examScores.reduce((sum, s) => sum + getMaxScore(s), 0);
+        const examPercentage = totalMaxScore > 0 ? Math.round((totalScore / totalMaxScore) * 100) : 0;
+
         return (
-          <div key={examId} className="rounded-md border">
-            <div className="bg-muted/50 px-4 py-2 border-b">
-              <div className="flex items-center justify-between">
+          <div key={examId} className="rounded-lg border-2 border-slate-200 shadow-sm overflow-hidden">
+            <div className="bg-gradient-to-r from-slate-50 to-slate-100 px-4 py-3 border-b border-slate-200">
+              <div className="flex items-center justify-between flex-wrap gap-2">
                 <div className="flex items-center gap-3">
-                  <span className="font-semibold">{examTitle}</span>
-                  <Badge variant="outline">{formatType(examType)}</Badge>
+                  <span className="font-semibold text-slate-900">{examTitle}</span>
+                  <Badge 
+                    variant={examType === "midterm" ? "default" : "secondary"}
+                    className={examType === "midterm" ? "bg-[#0a294e] text-white" : ""}
+                  >
+                    {formatType(examType)}
+                  </Badge>
                 </div>
-                <span className="text-sm text-muted-foreground">{examDate}</span>
+                <div className="flex items-center gap-4">
+                  <div className="text-right">
+                    <p className="text-xs text-muted-foreground">Toplam Puan</p>
+                    <p className="text-sm font-semibold text-slate-900">
+                      {totalScore} / {totalMaxScore} (%{examPercentage})
+                    </p>
+                  </div>
+                  {examDate !== "-" && (
+                    <span className="text-sm text-muted-foreground">{examDate}</span>
+                  )}
+                </div>
               </div>
             </div>
             <Table>
               <TableHeader>
-                <TableRow>
-                  <TableHead>Question Number</TableHead>
-                  <TableHead>Score / Max Score</TableHead>
-                  <TableHead>Learning Outcome Code</TableHead>
+                <TableRow className="bg-slate-50">
+                  <TableHead className="font-semibold text-slate-900">Soru No</TableHead>
+                  <TableHead className="font-semibold text-slate-900">Puan / Max Puan</TableHead>
+                  <TableHead className="font-semibold text-slate-900">Öğrenme Çıktısı</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -121,19 +142,32 @@ export function StudentExamScoreTable({ scores }: StudentExamScoreTableProps) {
                   const questionNumber = getQuestionNumber(score);
                   const maxScore = getMaxScore(score);
                   const loCode = getLearningOutcomeCode(score);
+                  const percentage = maxScore > 0 ? Math.round((score.scoreValue / maxScore) * 100) : 0;
 
                   return (
                     <TableRow
                       key={score._id}
-                      className={index % 2 === 0 ? "bg-background" : "bg-muted/50"}
+                      className={index % 2 === 0 ? "bg-background hover:bg-slate-50" : "bg-muted/30 hover:bg-slate-50"}
                     >
-                      <TableCell className="font-medium">{questionNumber}</TableCell>
+                      <TableCell className="font-medium text-slate-900">{questionNumber || "-"}</TableCell>
                       <TableCell>
-                        <span className="font-medium">{score.scoreValue}</span>
-                        <span className="text-muted-foreground"> / {maxScore}</span>
+                        <div className="flex items-center gap-2">
+                          <span className="font-semibold text-slate-900">{score.scoreValue}</span>
+                          <span className="text-muted-foreground">/ {maxScore}</span>
+                          <Badge 
+                            variant={percentage >= 60 ? "default" : percentage >= 40 ? "secondary" : "destructive"}
+                            className="text-xs"
+                          >
+                            %{percentage}
+                          </Badge>
+                        </div>
                       </TableCell>
                       <TableCell>
-                        <Badge variant="secondary">{loCode}</Badge>
+                        {loCode !== "-" ? (
+                          <Badge variant="outline" className="font-medium">{loCode}</Badge>
+                        ) : (
+                          <span className="text-muted-foreground">-</span>
+                        )}
                       </TableCell>
                     </TableRow>
                   );

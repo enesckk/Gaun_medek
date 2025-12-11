@@ -1,6 +1,7 @@
 "use client";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Users } from "lucide-react";
 import { type Student } from "@/lib/api/studentApi";
 import { type LOAchievement } from "@/lib/api/scoreApi";
 
@@ -32,14 +33,16 @@ export function StudentComparisonChart({
 
   if (studentData.length === 0) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Student Comparison</CardTitle>
-          <CardDescription>Overall LO Achievement by Student</CardDescription>
+      <Card className="border-2 border-slate-200">
+        <CardHeader className="bg-gradient-to-r from-slate-50 to-slate-100 border-b border-slate-200">
+          <CardTitle className="text-xl text-slate-900">Öğrenci Karşılaştırması</CardTitle>
+          <CardDescription className="text-sm">Öğrenciler için genel ÖÇ başarı oranları</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="text-center py-8 text-muted-foreground">
-            No student data available
+            <Users className="h-12 w-12 mx-auto mb-4 text-slate-400" />
+            <p className="text-lg font-medium">Öğrenci verisi bulunamadı</p>
+            <p className="text-sm mt-2">Sınav puanları eklendikten sonra burada görünecektir</p>
           </div>
         </CardContent>
       </Card>
@@ -47,10 +50,10 @@ export function StudentComparisonChart({
   }
 
   return (
-    <Card className="rounded-xl shadow-sm">
-      <CardHeader>
-        <CardTitle>Student Comparison</CardTitle>
-        <CardDescription>Overall LO Achievement by Student</CardDescription>
+    <Card className="rounded-xl shadow-sm border-2 border-slate-200">
+      <CardHeader className="bg-gradient-to-r from-slate-50 to-slate-100 border-b border-slate-200">
+        <CardTitle className="text-xl text-slate-900">Öğrenci Karşılaştırması</CardTitle>
+        <CardDescription className="text-sm">Öğrenciler için genel ÖÇ başarı oranları</CardDescription>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">

@@ -21,6 +21,9 @@ export interface Course {
   };
   students?: Array<{ studentNumber: string; fullName: string }>;
   studentsCount?: number;
+  examCount?: number;
+  midtermExams?: Array<{ examCode: string; examType: string }>;
+  finalExams?: Array<{ examCode: string; examType: string }>;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -72,8 +75,19 @@ export const courseApi = {
   },
 
   getById: async (id: string): Promise<Course> => {
-    const response = await apiClient.get(`/courses/${id}`);
-    return response.data.course || response.data.data;
+    // Ensure id is a string
+    const courseId = typeof id === 'string' ? id : id?.toString() || String(id);
+    if (!courseId || courseId === 'undefined' || courseId === 'null' || courseId === '[object Object]') {
+      console.error('Invalid course ID provided to getById:', id);
+      throw new Error(`Geçersiz ders ID: ${courseId}`);
+    }
+    try {
+      const response = await apiClient.get(`/courses/${courseId}`);
+      return response.data.course || response.data.data;
+    } catch (error: any) {
+      console.error('Error fetching course by ID:', error);
+      throw error;
+    }
   },
 
   createCourse: (data: CreateCourseDto) => apiClient.post("/courses/create", data),
@@ -87,5 +101,10 @@ export const courseApi = {
   getMatrix: async (id: string): Promise<any> => {
     const response = await apiClient.get(`/courses/${id}/matrix`);
     return response.data;
+  },
+
+  seed: async (): Promise<Course[]> => {
+    const response = await apiClient.post("/courses/seed");
+    return response.data.data || [];
   },
 };

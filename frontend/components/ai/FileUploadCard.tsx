@@ -24,7 +24,7 @@ export function FileUploadCard({
       .toLowerCase();
     
     if (!acceptedFormats.includes(extension)) {
-      alert(`Unsupported file format. Please use: ${acceptedFormats.join(", ")}`);
+      alert(`Desteklenmeyen dosya formatı. Lütfen şunları kullanın: ${acceptedFormats.join(", ")}`);
       return;
     }
 
@@ -69,9 +69,9 @@ export function FileUploadCard({
   return (
     <Card className="rounded-xl shadow-sm">
       <CardHeader>
-        <CardTitle>Upload Exam Document</CardTitle>
+        <CardTitle>Sınav Belgesi Yükle</CardTitle>
         <CardDescription>
-          Upload a PDF or image file containing student exam answers
+          Öğrenci sınav cevaplarını içeren PDF veya resim dosyası yükleyin
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -103,9 +103,9 @@ export function FileUploadCard({
             <div className="space-y-4">
               <Upload className="h-16 w-16 mx-auto text-muted-foreground" />
               <div>
-                <p className="text-lg font-medium">Drop file here or click to upload</p>
+                <p className="text-lg font-medium">Dosyayı buraya sürükleyin veya yüklemek için tıklayın</p>
                 <p className="text-sm text-muted-foreground mt-2">
-                  Supports: {acceptedFormats.join(", ")}
+                  Desteklenen formatlar: {acceptedFormats.join(", ")}
                 </p>
               </div>
             </div>

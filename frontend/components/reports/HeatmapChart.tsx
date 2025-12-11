@@ -1,6 +1,7 @@
 "use client";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Target } from "lucide-react";
 import { type Student } from "@/lib/api/studentApi";
 import { type LOAchievement } from "@/lib/api/scoreApi";
 
@@ -37,16 +38,18 @@ export function HeatmapChart({
 
   if (students.length === 0 || learningOutcomes.length === 0) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle>LO vs Student Heatmap</CardTitle>
-          <CardDescription>
-            Achievement percentage for each Learning Outcome by Student
+      <Card className="border-2 border-slate-200">
+        <CardHeader className="bg-gradient-to-r from-slate-50 to-slate-100 border-b border-slate-200">
+          <CardTitle className="text-xl text-slate-900">ÖÇ - Öğrenci Başarı Matrisi</CardTitle>
+          <CardDescription className="text-sm">
+            Her öğrenme çıktısı için öğrenci bazında başarı yüzdeleri
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="text-center py-8 text-muted-foreground">
-            No data available
+            <Target className="h-12 w-12 mx-auto mb-4 text-slate-400" />
+            <p className="text-lg font-medium">Veri bulunamadı</p>
+            <p className="text-sm mt-2">Öğrenci ve öğrenme çıktısı verileri eklendikten sonra burada görünecektir</p>
           </div>
         </CardContent>
       </Card>
@@ -54,11 +57,11 @@ export function HeatmapChart({
   }
 
   return (
-    <Card className="rounded-xl shadow-sm">
-      <CardHeader>
-        <CardTitle>LO vs Student Heatmap</CardTitle>
-        <CardDescription>
-          Achievement percentage for each Learning Outcome by Student
+    <Card className="rounded-xl shadow-sm border-2 border-slate-200">
+      <CardHeader className="bg-gradient-to-r from-slate-50 to-slate-100 border-b border-slate-200">
+        <CardTitle className="text-xl text-slate-900">ÖÇ - Öğrenci Başarı Matrisi</CardTitle>
+        <CardDescription className="text-sm">
+          Her öğrenme çıktısı için öğrenci bazında başarı yüzdeleri
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -68,7 +71,7 @@ export function HeatmapChart({
               <thead>
                 <tr>
                   <th className="border p-2 text-left font-medium bg-muted/50 sticky left-0 z-10">
-                    LO / Student
+                    ÖÇ / Öğrenci
                   </th>
                   {students.map((student) => (
                     <th

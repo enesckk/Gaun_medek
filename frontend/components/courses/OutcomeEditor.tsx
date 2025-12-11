@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Plus, Trash2, GraduationCap, Info } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Plus, Trash2, GraduationCap, Info, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -30,6 +31,7 @@ export function OutcomeEditor({
   errors = {},
   disabled = false,
 }: OutcomeEditorProps) {
+  const router = useRouter();
   const [programOutcomes, setProgramOutcomes] = useState<ProgramOutcome[]>([]);
   const [loadingPOs, setLoadingPOs] = useState(false);
 
@@ -48,6 +50,28 @@ export function OutcomeEditor({
       setLoadingPOs(true);
       const data = await programOutcomeApi.getByDepartment(departmentId);
       setProgramOutcomes(data || []);
+      
+      // Clean up invalid PÇ references (PÇs that were deleted but still referenced in outcomes)
+      if (data && data.length > 0 && outcomes.length > 0) {
+        const validPCCodes = new Set(data.map(po => po.code));
+        let needsUpdate = false;
+        
+        const cleanedOutcomes = outcomes.map(outcome => {
+          const validPOs = (outcome.programOutcomes || []).filter(poCode => 
+            validPCCodes.has(poCode)
+          );
+          
+          if (validPOs.length !== (outcome.programOutcomes || []).length) {
+            needsUpdate = true;
+            return { ...outcome, programOutcomes: validPOs };
+          }
+          return outcome;
+        });
+        
+        if (needsUpdate) {
+          onChange(cleanedOutcomes);
+        }
+      }
     } catch (error: any) {
       console.error("Program çıktıları yüklenirken hata:", error);
       setProgramOutcomes([]);
@@ -101,6 +125,7 @@ export function OutcomeEditor({
     updateOutcome(outcomeIndex, "programOutcomes", updatedPOs);
   };
 
+
   // Auto-fill code on focus if empty
   const handleCodeFocus = (index: number) => {
     if (!outcomes[index].code.trim()) {
@@ -117,18 +142,18 @@ export function OutcomeEditor({
         </p>
       )}
 
-      <div className="space-y-6">
+      <div className="space-y-4">
         {outcomes.map((outcome, index) => (
           <div
             key={index}
-            className="flex flex-col gap-4 p-6 border-2 border-purple-200 rounded-2xl bg-gradient-to-br from-purple-50/50 to-pink-50/50 shadow-md"
+            className="flex flex-col gap-3 p-4 border border-slate-200 rounded-lg bg-white shadow-sm"
           >
             {/* ÖÇ Kodu ve Açıklama */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="space-y-1.5">
                 <Label
                   htmlFor={`outcome-code-${index}`}
-                  className="text-lg font-semibold text-slate-700"
+                  className="text-sm font-medium text-slate-700"
                 >
                   ÖÇ Kodu <span className="text-red-500">*</span>
                 </Label>
@@ -140,23 +165,23 @@ export function OutcomeEditor({
                   placeholder={`Örn: ${getSuggestedCode(index)}`}
                   disabled={disabled}
                   className={cn(
-                    "h-14 text-lg border-2 rounded-xl",
+                    "h-10 text-sm",
                     errors[`lo_${index}_code`] 
                       ? "border-red-400 focus:border-red-500" 
-                      : "border-slate-200 focus:border-purple-500"
+                      : "border-slate-200 focus:border-slate-400"
                   )}
                 />
                 {errors[`lo_${index}_code`] && (
-                  <p className="text-sm text-red-600 bg-red-50 p-2 rounded-lg">
+                  <p className="text-xs text-red-600 bg-red-50 p-1.5 rounded">
                     {errors[`lo_${index}_code`]}
                   </p>
                 )}
               </div>
 
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 <Label
                   htmlFor={`outcome-desc-${index}`}
-                  className="text-lg font-semibold text-slate-700"
+                  className="text-sm font-medium text-slate-700"
                 >
                   Açıklama <span className="text-red-500">*</span>
                 </Label>
@@ -169,14 +194,14 @@ export function OutcomeEditor({
                   placeholder="Örn: Algoritma analizini anlama"
                   disabled={disabled}
                   className={cn(
-                    "h-14 text-lg border-2 rounded-xl",
-                    errors[`lo_${index}_description`]
-                      ? "border-red-400 focus:border-red-500"
-                      : "border-slate-200 focus:border-purple-500"
+                    "h-10 text-sm",
+                    errors[`lo_${index}_description`] 
+                      ? "border-red-400 focus:border-red-500" 
+                      : "border-slate-200 focus:border-slate-400"
                   )}
                 />
                 {errors[`lo_${index}_description`] && (
-                  <p className="text-sm text-red-600 bg-red-50 p-2 rounded-lg">
+                  <p className="text-xs text-red-600 bg-red-50 p-1.5 rounded">
                     {errors[`lo_${index}_description`]}
                   </p>
                 )}
@@ -185,26 +210,41 @@ export function OutcomeEditor({
 
             {/* Program Çıktıları (PÇ) Seçimi */}
             {departmentId && (
-              <div className="space-y-3 pt-4 border-t border-purple-200">
+              <div className="space-y-2 pt-3 border-t border-slate-200">
                 <div className="flex items-start gap-2">
-                  <GraduationCap className="h-5 w-5 text-purple-600 mt-0.5" />
+                  <GraduationCap className="h-4 w-4 text-slate-600 mt-0.5" />
                   <div className="flex-1">
-                    <Label className="text-base font-semibold text-slate-700">
+                    <Label className="text-sm font-medium text-slate-700">
                       Bu ÖÇ hangi Program Çıktılarına (PÇ) katkıda bulunur?
                       <span className="text-slate-400 font-normal ml-1">(İsteğe bağlı)</span>
                     </Label>
                     {loadingPOs ? (
-                      <p className="text-sm text-slate-500 mt-2">PÇ listesi yükleniyor...</p>
+                      <p className="text-xs text-slate-500 mt-1.5">PÇ listesi yükleniyor...</p>
                     ) : programOutcomes.length === 0 ? (
-                      <p className="text-sm text-slate-500 mt-2">
-                        Bu bölüm için henüz program çıktısı tanımlanmamış.
-                      </p>
+                      <div className="mt-1.5 p-2 bg-amber-50 rounded border border-amber-200">
+                        <p className="text-xs text-amber-800 mb-1.5">
+                          <strong>Önemli:</strong> Bu bölüm için henüz program çıktısı tanımlanmamış.
+                        </p>
+                        <p className="text-xs text-amber-700 mb-2">
+                          ÖÇ → PÇ eşleştirmesi yapabilmek için önce bu bölüm için program çıktıları eklemeniz gerekmektedir.
+                        </p>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => router.push("/dashboard/program-outcomes")}
+                          className="h-7 text-xs bg-amber-100 hover:bg-amber-200 border-amber-300 text-amber-900"
+                        >
+                          <ExternalLink className="h-3 w-3 mr-1" />
+                          Program Çıktıları Sayfasına Git
+                        </Button>
+                      </div>
                     ) : (
-                      <div className="mt-2 p-3 bg-[#0a294e]/5 rounded-lg border border-[#0a294e]/10">
-                        <div className="flex items-start gap-2 text-sm text-[#0a294e]">
-                          <Info className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                      <div className="mt-1.5 p-2 bg-slate-50 rounded border border-slate-200">
+                        <div className="flex items-start gap-2 text-xs text-slate-600">
+                          <Info className="h-3 w-3 mt-0.5 flex-shrink-0" />
                           <div>
-                            <p className="font-semibold mb-1">MÜDEK Mantığı:</p>
+                            <p className="font-medium mb-0.5">MÜDEK Mantığı:</p>
                             <p>Her Öğrenme Çıktısı (ÖÇ), bir veya daha fazla Program Çıktısına (PÇ) katkıda bulunur. Sorular sadece ÖÇ'ye eşlenir, PÇ otomatik olarak ÖÇ'den türetilir.</p>
                           </div>
                         </div>
@@ -220,17 +260,17 @@ export function OutcomeEditor({
                         <Badge
                           key={po.code}
                           variant={isSelected ? "default" : "outline"}
-                          className={`cursor-pointer text-sm px-4 py-2 rounded-lg font-medium transition-all duration-200 flex items-center gap-2 ${
+                          className={`cursor-pointer text-xs px-2 py-1 rounded font-medium transition-all duration-200 flex items-center gap-1.5 ${
                             isSelected
-                              ? "bg-gradient-to-r from-green-500 to-emerald-600 text-white hover:from-green-600 hover:to-emerald-700 shadow-md"
-                              : "border-2 border-slate-300 text-slate-700 hover:bg-green-50 hover:border-green-400"
+                              ? "bg-green-600 text-white hover:bg-green-700"
+                              : "border border-slate-300 text-slate-700 hover:bg-green-50 hover:border-green-400"
                           }`}
                           onClick={() => !disabled && toggleProgramOutcome(index, po.code)}
                         >
-                          <span className={`w-4 h-4 rounded border-2 flex items-center justify-center ${
+                          <span className={`w-3 h-3 rounded border flex items-center justify-center ${
                             isSelected ? "bg-white border-white" : "border-slate-400"
                           }`}>
-                            {isSelected && <span className="text-green-600 text-xs">✓</span>}
+                            {isSelected && <span className="text-green-600 text-[10px]">✓</span>}
                           </span>
                           {po.code} - {po.description}
                         </Badge>
@@ -239,7 +279,7 @@ export function OutcomeEditor({
                   </div>
                 )}
                 {(outcome.programOutcomes || []).length > 0 && (
-                  <p className="text-xs text-slate-500 bg-slate-50 p-2 rounded-lg">
+                  <p className="text-xs text-slate-500 bg-slate-50 p-1.5 rounded">
                     💡 {outcome.programOutcomes?.length} program çıktısı seçildi: {outcome.programOutcomes?.join(", ")}
                   </p>
                 )}
@@ -248,16 +288,16 @@ export function OutcomeEditor({
 
             {/* Sil Butonu */}
             {outcomes.length > 1 && (
-              <div className="flex justify-end pt-2">
+              <div className="flex justify-end pt-1">
                 <Button
                   type="button"
                   variant="ghost"
                   size="sm"
                   onClick={() => removeOutcome(index)}
                   disabled={disabled}
-                  className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                  className="text-red-600 hover:text-red-700 hover:bg-red-50 h-8 text-xs"
                 >
-                  <Trash2 className="h-4 w-4 mr-2" />
+                  <Trash2 className="h-3 w-3 mr-1" />
                   Bu ÖÇ'yi Sil
                 </Button>
               </div>
@@ -269,19 +309,15 @@ export function OutcomeEditor({
       <Button
         type="button"
         variant="outline"
-        size="lg"
+        size="default"
         onClick={addOutcome}
         disabled={disabled}
-        className="w-full h-14 text-lg font-semibold"
+        className="w-full h-10 text-sm"
       >
-        <Plus className="h-6 w-6 mr-2" />
+        <Plus className="h-4 w-4 mr-2" />
         ÖÇ Ekle
       </Button>
     </div>
   );
-}
-
-function cn(...classes: (string | undefined | null | false)[]): string {
-  return classes.filter(Boolean).join(" ");
 }
 

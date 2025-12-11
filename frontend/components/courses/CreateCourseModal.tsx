@@ -16,11 +16,17 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Select } from "@/components/ui/select";
 import { courseApi } from "@/lib/api/courseApi";
+import { departmentApi, type Department } from "@/lib/api/departmentApi";
+import { ExamSettingsComponent, type ExamSettings } from "@/components/courses/ExamSettings";
+import { StudentImporter, type Student } from "@/components/courses/StudentImporter";
+import { OutcomeEditor } from "@/components/courses/OutcomeEditor";
 
 interface LearningOutcome {
   code: string;
   description: string;
+  programOutcomes?: string[];
 }
 
 interface CreateCourseModalProps {
@@ -36,27 +42,84 @@ export function CreateCourseModal({
 }: CreateCourseModalProps) {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
+  const [departments, setDepartments] = useState<Department[]>([]);
+  const [loadingDepartments, setLoadingDepartments] = useState(false);
 
   // Form state
   const [name, setName] = useState("");
   const [code, setCode] = useState("");
   const [description, setDescription] = useState("");
-  const [department, setDepartment] = useState("");
+  const [departmentId, setDepartmentId] = useState("");
   const [semester, setSemester] = useState("");
   const [learningOutcomes, setLearningOutcomes] = useState<LearningOutcome[]>([
-    { code: "", description: "" },
+    { code: "ÖÇ1", description: "", programOutcomes: [] },
   ]);
+  const [midtermExam, setMidtermExam] = useState<ExamSettings>({
+    examCode: "01",
+    questionCount: 10,
+    maxScorePerQuestion: 10,
+  });
+  const [finalExam, setFinalExam] = useState<ExamSettings>({
+    examCode: "02",
+    questionCount: 10,
+    maxScorePerQuestion: 10,
+  });
+  const [students, setStudents] = useState<Student[]>([]);
 
   // Validation errors
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    loadDepartments();
+  }, []);
+
+  const loadDepartments = async () => {
+    try {
+      setLoadingDepartments(true);
+      const data = await departmentApi.getAll();
+      
+      // Eğer bölüm yoksa, otomatik seed yap
+      if (!data || data.length === 0) {
+        try {
+          await departmentApi.seed();
+          // Seed sonrası tekrar yükle
+          const seededData = await departmentApi.getAll();
+          setDepartments(seededData || []);
+          toast.success("Bölümler otomatik olarak yüklendi");
+        } catch (seedError: any) {
+          console.error("Bölüm seed hatası:", seedError);
+          // Seed başarısız olursa boş bırak
+          setDepartments([]);
+        }
+      } else {
+        setDepartments(data);
+      }
+    } catch (error: any) {
+      console.error("Bölümler yüklenirken hata:", error);
+      setDepartments([]);
+    } finally {
+      setLoadingDepartments(false);
+    }
+  };
 
   const resetForm = () => {
     setName("");
     setCode("");
     setDescription("");
-    setDepartment("");
+    setDepartmentId("");
     setSemester("");
-    setLearningOutcomes([{ code: "", description: "" }]);
+    setLearningOutcomes([{ code: "ÖÇ1", description: "", programOutcomes: [] }]);
+    setMidtermExam({
+      examCode: "01",
+      questionCount: 10,
+      maxScorePerQuestion: 10,
+    });
+    setFinalExam({
+      examCode: "02",
+      questionCount: 10,
+      maxScorePerQuestion: 10,
+    });
+    setStudents([]);
     setErrors({});
   };
 
@@ -67,25 +130,6 @@ export function CreateCourseModal({
     }
   };
 
-  const addLearningOutcome = () => {
-    setLearningOutcomes([...learningOutcomes, { code: "", description: "" }]);
-  };
-
-  const removeLearningOutcome = (index: number) => {
-    if (learningOutcomes.length > 1) {
-      setLearningOutcomes(learningOutcomes.filter((_, i) => i !== index));
-    }
-  };
-
-  const updateLearningOutcome = (
-    index: number,
-    field: "code" | "description",
-    value: string
-  ) => {
-    const updated = [...learningOutcomes];
-    updated[index][field] = value;
-    setLearningOutcomes(updated);
-  };
 
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
@@ -102,6 +146,10 @@ export function CreateCourseModal({
       newErrors.code = "Ders kodu en az 2 karakter olmalıdır";
     } else if (!/^[A-Z0-9]+$/.test(code.trim().toUpperCase())) {
       newErrors.code = "Ders kodu sadece büyük harf ve rakam içermelidir";
+    }
+
+    if (!departmentId) {
+      newErrors.departmentId = "Bölüm seçimi gereklidir";
     }
 
     // Validate learning outcomes
@@ -123,6 +171,42 @@ export function CreateCourseModal({
       }
     });
 
+    // Exam Settings Validation
+    if (!midtermExam.examCode.trim()) {
+      newErrors.midtermExamCode = "Vize sınav kodu gereklidir";
+    } else if (!/^\d{2}$/.test(midtermExam.examCode.trim())) {
+      newErrors.midtermExamCode = "Vize sınav kodu 2 haneli sayı olmalıdır";
+    }
+    if (!midtermExam.questionCount || midtermExam.questionCount < 1) {
+      newErrors.midtermQuestionCount = "Vize soru sayısı en az 1 olmalıdır";
+    }
+    if (!midtermExam.maxScorePerQuestion || midtermExam.maxScorePerQuestion <= 0) {
+      newErrors.midtermMaxScore = "Vize soru başına maksimum puan gereklidir";
+    }
+
+    if (!finalExam.examCode.trim()) {
+      newErrors.finalExamCode = "Final sınav kodu gereklidir";
+    } else if (!/^\d{2}$/.test(finalExam.examCode.trim())) {
+      newErrors.finalExamCode = "Final sınav kodu 2 haneli sayı olmalıdır";
+    }
+    if (!finalExam.questionCount || finalExam.questionCount < 1) {
+      newErrors.finalQuestionCount = "Final soru sayısı en az 1 olmalıdır";
+    }
+    if (!finalExam.maxScorePerQuestion || finalExam.maxScorePerQuestion <= 0) {
+      newErrors.finalMaxScore = "Final soru başına maksimum puan gereklidir";
+    }
+
+    if (midtermExam.examCode === finalExam.examCode && midtermExam.examCode) {
+      newErrors.examCodeMatch = "Vize ve Final sınav kodları farklı olmalıdır";
+      newErrors.midtermExamCode = "Vize ve Final sınav kodları farklı olmalıdır";
+      newErrors.finalExamCode = "Vize ve Final sınav kodları farklı olmalıdır";
+    }
+
+    // Students Validation
+    if (students.length === 0) {
+      newErrors.students = "En az bir öğrenci eklemelisiniz";
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -143,14 +227,32 @@ export function CreateCourseModal({
         (lo) => lo.code.trim() && lo.description.trim()
       );
 
-      // Prepare data
+      // Prepare data with required fields for backend
       const courseData = {
         name: name.trim(),
         code: code.trim().toUpperCase(),
         description: description.trim() || undefined,
-        department: department.trim() || undefined,
+        departmentId: departmentId,
         semester: semester.trim() || undefined,
-        learningOutcomes: validOutcomes,
+        learningOutcomes: validOutcomes.map((lo) => ({
+          code: lo.code.trim(),
+          description: lo.description.trim(),
+          programOutcomes: lo.programOutcomes || [],
+        })),
+        midtermExam: {
+          examCode: midtermExam.examCode.trim(),
+          questionCount: midtermExam.questionCount,
+          maxScorePerQuestion: midtermExam.maxScorePerQuestion,
+        },
+        finalExam: {
+          examCode: finalExam.examCode.trim(),
+          questionCount: finalExam.questionCount,
+          maxScorePerQuestion: finalExam.maxScorePerQuestion,
+        },
+        students: students.map((s) => ({
+          studentNumber: s.studentNumber.trim(),
+          fullName: s.fullName.trim(),
+        })),
       };
 
       await courseApi.createCourse(courseData);
@@ -172,30 +274,30 @@ export function CreateCourseModal({
   };
 
   return (
-    <Dialog open={open} onOpenChange={handleClose}>
+    <Dialog open={open} onOpenChange={handleClose} size="full">
       <DialogContent
         onClose={handleClose}
-        className="max-w-3xl max-h-[90vh] overflow-y-auto"
+        className="max-h-[90vh] h-[90vh] overflow-y-auto"
       >
-        <DialogHeader>
-          <DialogTitle>Yeni Ders Oluştur</DialogTitle>
-          <DialogDescription>
+        <DialogHeader className="pb-3">
+          <DialogTitle className="text-base">Yeni Ders Oluştur</DialogTitle>
+          <DialogDescription className="text-sm">
             Yeni bir ders eklemek için aşağıdaki bilgileri doldurun.{" "}
             <span className="text-destructive">*</span> ile işaretli alanlar
             zorunludur.
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-4">
           {/* Basic Information */}
-          <div className="space-y-4">
-            <h3 className="text-sm font-semibold text-foreground">
+          <div className="space-y-3">
+            <h3 className="text-sm font-semibold text-foreground border-b pb-2">
               Temel Bilgiler
             </h3>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="name">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label htmlFor="name" className="text-sm">
                   Ders Adı <span className="text-destructive">*</span>
                 </Label>
                 <Input
@@ -204,15 +306,15 @@ export function CreateCourseModal({
                   onChange={(e) => setName(e.target.value)}
                   placeholder="Örn: Veri Yapıları"
                   disabled={isLoading}
-                  className={errors.name ? "border-destructive" : ""}
+                  className={`h-10 text-sm ${errors.name ? "border-destructive" : ""}`}
                 />
                 {errors.name && (
-                  <p className="text-sm text-destructive">{errors.name}</p>
+                  <p className="text-xs text-destructive">{errors.name}</p>
                 )}
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="code">
+              <div className="space-y-1.5">
+                <Label htmlFor="code" className="text-sm">
                   Ders Kodu <span className="text-destructive">*</span>
                 </Label>
                 <Input
@@ -223,150 +325,120 @@ export function CreateCourseModal({
                   }
                   placeholder="Örn: CS201"
                   disabled={isLoading}
-                  className={errors.code ? "border-destructive" : ""}
+                  className={`h-10 text-sm ${errors.code ? "border-destructive" : ""}`}
                 />
                 {errors.code && (
-                  <p className="text-sm text-destructive">{errors.code}</p>
+                  <p className="text-xs text-destructive">{errors.code}</p>
                 )}
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="department">Bölüm</Label>
-                <Input
-                  id="department"
-                  value={department}
-                  onChange={(e) => setDepartment(e.target.value)}
-                  placeholder="Örn: Bilgisayar Mühendisliği"
-                  disabled={isLoading}
-                />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label htmlFor="departmentId" className="text-sm">
+                  Bölüm <span className="text-destructive">*</span>
+                </Label>
+                <Select
+                  id="departmentId"
+                  value={departmentId}
+                  onChange={(e) => setDepartmentId(e.target.value)}
+                  disabled={isLoading || loadingDepartments}
+                  className={`h-10 text-sm ${errors.departmentId ? "border-destructive" : ""}`}
+                >
+                  <option value="">
+                    {loadingDepartments 
+                      ? "Yükleniyor..." 
+                      : departments.length === 0
+                      ? "Bölüm bulunamadı - yükleniyor..."
+                      : "Bölüm seçin"}
+                  </option>
+                  {departments.map((dept) => (
+                    <option key={dept._id} value={dept._id}>
+                      {dept.name} {dept.code ? `(${dept.code})` : ""}
+                    </option>
+                  ))}
+                </Select>
+                {errors.departmentId && (
+                  <p className="text-xs text-destructive">{errors.departmentId}</p>
+                )}
+                {!loadingDepartments && departments.length === 0 && (
+                  <p className="text-xs text-muted-foreground">
+                    Bölümler yüklenemedi. Lütfen sayfayı yenileyin veya backend'i kontrol edin.
+                  </p>
+                )}
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="semester">Dönem</Label>
+              <div className="space-y-1.5">
+                <Label htmlFor="semester" className="text-sm">Dönem</Label>
                 <Input
                   id="semester"
                   value={semester}
                   onChange={(e) => setSemester(e.target.value)}
                   placeholder="Örn: Güz 2024"
                   disabled={isLoading}
+                  className="h-10 text-sm"
                 />
               </div>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="description">Açıklama</Label>
+            <div className="space-y-1.5">
+              <Label htmlFor="description" className="text-sm">Açıklama</Label>
               <Textarea
                 id="description"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="Ders hakkında açıklama..."
-                rows={3}
+                rows={2}
                 disabled={isLoading}
+                className="text-sm"
               />
             </div>
           </div>
 
           {/* Learning Outcomes */}
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-foreground">
-                Öğrenme Çıktıları (ÖÇ){" "}
-                <span className="text-destructive">*</span>
-              </h3>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={addLearningOutcome}
+          <div className="space-y-3">
+            <h3 className="text-sm font-semibold text-foreground border-b pb-2">
+              Öğrenme Çıktıları (ÖÇ){" "}
+              <span className="text-destructive">*</span>
+            </h3>
+            <div className="max-h-[300px] overflow-y-auto pr-2">
+              <OutcomeEditor
+                outcomes={learningOutcomes}
+                onChange={setLearningOutcomes}
+                departmentId={departmentId}
+                errors={errors}
                 disabled={isLoading}
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                ÖÇ Ekle
-              </Button>
+              />
             </div>
+          </div>
 
-            {errors.learningOutcomes && (
-              <p className="text-sm text-destructive">
-                {errors.learningOutcomes}
-              </p>
-            )}
+          {/* Exam Settings */}
+          <div className="space-y-3">
+            <h3 className="text-sm font-semibold text-foreground border-b pb-2">
+              Sınav Ayarları <span className="text-destructive">*</span>
+            </h3>
+            <ExamSettingsComponent
+              midterm={midtermExam}
+              final={finalExam}
+              onMidtermChange={setMidtermExam}
+              onFinalChange={setFinalExam}
+              errors={errors}
+              disabled={isLoading}
+            />
+          </div>
 
-            <div className="space-y-3">
-              {learningOutcomes.map((lo, index) => (
-                <div
-                  key={index}
-                  className="flex gap-3 p-4 border rounded-lg bg-muted/30"
-                >
-                  <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <div className="space-y-2">
-                      <Label htmlFor={`lo-code-${index}`}>
-                        Kod <span className="text-destructive">*</span>
-                      </Label>
-                      <Input
-                        id={`lo-code-${index}`}
-                        value={lo.code}
-                        onChange={(e) =>
-                          updateLearningOutcome(index, "code", e.target.value)
-                        }
-                        placeholder="Örn: ÖÇ1"
-                        disabled={isLoading}
-                        className={
-                          errors[`lo_${index}_code`] ? "border-destructive" : ""
-                        }
-                      />
-                      {errors[`lo_${index}_code`] && (
-                        <p className="text-xs text-destructive">
-                          {errors[`lo_${index}_code`]}
-                        </p>
-                      )}
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor={`lo-desc-${index}`}>
-                        Açıklama <span className="text-destructive">*</span>
-                      </Label>
-                      <Input
-                        id={`lo-desc-${index}`}
-                        value={lo.description}
-                        onChange={(e) =>
-                          updateLearningOutcome(
-                            index,
-                            "description",
-                            e.target.value
-                          )
-                        }
-                        placeholder="Örn: Algoritma analizini anlama"
-                        disabled={isLoading}
-                        className={
-                          errors[`lo_${index}_description`]
-                            ? "border-destructive"
-                            : ""
-                        }
-                      />
-                      {errors[`lo_${index}_description`] && (
-                        <p className="text-xs text-destructive">
-                          {errors[`lo_${index}_description`]}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-
-                  {learningOutcomes.length > 1 && (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => removeLearningOutcome(index)}
-                      disabled={isLoading}
-                      className="mt-6"
-                    >
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
-                  )}
-                </div>
-              ))}
+          {/* Student List */}
+          <div className="space-y-3">
+            <h3 className="text-sm font-semibold text-foreground border-b pb-2">
+              Öğrenci Listesi <span className="text-destructive">*</span>
+            </h3>
+            <div className="max-h-[300px] overflow-y-auto pr-2">
+              <StudentImporter
+                students={students}
+                onChange={setStudents}
+                errors={errors}
+                disabled={isLoading}
+              />
             </div>
           </div>
 

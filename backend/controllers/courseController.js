@@ -285,6 +285,14 @@ const getCourseById = async (req, res) => {
   try {
     const { id } = req.params;
 
+    // Validate id
+    if (!id || id === 'undefined' || id === 'null' || id === '[object Object]') {
+      return res.status(400).json({
+        success: false,
+        message: `Geçersiz ders ID: ${id}`,
+      });
+    }
+
     const course = await Course.findById(id)
       .populate("department", "name code")
       .exec();
@@ -301,6 +309,7 @@ const getCourseById = async (req, res) => {
       data: course,
     });
   } catch (error) {
+    console.error('Error in getCourseById:', error);
     console.error("Error fetching course by ID:", error);
     return res.status(500).json({
       success: false,
@@ -603,6 +612,40 @@ const getCourseMatrix = async (req, res) => {
   }
 };
 
+// Seed courses (for development/testing - imports existing courses if any)
+const seedCourses = async (req, res) => {
+  try {
+    // Check if courses already exist
+    const existingCount = await Course.countDocuments();
+    if (existingCount > 0) {
+      // Return existing courses instead of error
+      const existingCourses = await Course.find()
+        .populate("department", "name code")
+        .sort({ updatedAt: -1 });
+      
+      return res.status(200).json({
+        success: true,
+        message: `${existingCount} mevcut ders bulundu.`,
+        data: existingCourses,
+      });
+    }
+
+    // If no courses exist, you can add sample courses here
+    // For now, just return empty array
+    return res.status(200).json({
+      success: true,
+      message: "Henüz ders bulunmuyor. Yeni ders oluşturabilirsiniz.",
+      data: [],
+    });
+  } catch (error) {
+    console.error("Error seeding courses:", error);
+    return res.status(500).json({
+      success: false,
+      message: error.message || "Dersler işlenirken bir hata oluştu.",
+    });
+  }
+};
+
 export {
   createCourse,
   getCourses,
@@ -610,4 +653,5 @@ export {
   updateCourse,
   deleteCourse,
   getCourseMatrix,
+  seedCourses,
 };

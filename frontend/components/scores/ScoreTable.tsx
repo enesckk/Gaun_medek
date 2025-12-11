@@ -69,7 +69,7 @@ export function ScoreTable({ scores, onUpdate }: ScoreTableProps) {
   if (scores.length === 0) {
     return (
       <div className="text-center py-8 text-muted-foreground">
-        No scores found for this exam.
+        Bu sınav için puan bulunamadı.
       </div>
     );
   }
@@ -88,14 +88,14 @@ export function ScoreTable({ scores, onUpdate }: ScoreTableProps) {
     return (
       <>
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold">Scores by Student</h3>
+          <h3 className="text-lg font-semibold">Öğrenciye Göre Puanlar</h3>
           <Button
             variant="outline"
             size="sm"
             onClick={() => setGroupBy("question")}
           >
             <List className="mr-2 h-4 w-4" />
-            Group by Question
+            Soruya Göre Grupla
           </Button>
         </div>
 
@@ -114,10 +114,10 @@ export function ScoreTable({ scores, onUpdate }: ScoreTableProps) {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Question Number</TableHead>
-                        <TableHead>Score / Max Score</TableHead>
-                        <TableHead>Learning Outcome</TableHead>
-                        <TableHead className="text-right">Actions</TableHead>
+                        <TableHead>Soru No</TableHead>
+                        <TableHead>Puan / Max Puan</TableHead>
+                        <TableHead>Öğrenme Çıktısı</TableHead>
+                        <TableHead className="text-right">İşlemler</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -182,14 +182,14 @@ export function ScoreTable({ scores, onUpdate }: ScoreTableProps) {
   return (
     <>
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold">Scores by Question</h3>
+        <h3 className="text-lg font-semibold">Soruya Göre Puanlar</h3>
         <Button
           variant="outline"
           size="sm"
           onClick={() => setGroupBy("student")}
         >
           <Users className="mr-2 h-4 w-4" />
-          Group by Student
+          Öğrenciye Göre Grupla
         </Button>
       </div>
 
@@ -202,7 +202,7 @@ export function ScoreTable({ scores, onUpdate }: ScoreTableProps) {
               <CardHeader className="pb-3">
                 <CardTitle className="text-base flex items-center gap-2">
                   <List className="h-4 w-4" />
-                  Question {question.number} (Max: {question.maxScore})
+                      Soru {question.number} (Max: {question.maxScore})
                   {loCode !== "-" && (
                     <Badge variant="secondary" className="ml-2">
                       {loCode}
@@ -214,10 +214,10 @@ export function ScoreTable({ scores, onUpdate }: ScoreTableProps) {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Student Number</TableHead>
-                      <TableHead>Student Name</TableHead>
-                      <TableHead>Score / Max Score</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
+                      <TableHead>Öğrenci No</TableHead>
+                      <TableHead>Öğrenci Adı</TableHead>
+                      <TableHead>Puan / Max Puan</TableHead>
+                      <TableHead className="text-right">İşlemler</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>

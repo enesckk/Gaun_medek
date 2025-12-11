@@ -10,24 +10,21 @@ import {
   FileText,
   Users,
   BarChart3,
+  GraduationCap,
   Menu,
   X,
-  Plus,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "./button";
 
 const navigation = [
-  { name: "Dashboard", href: "/", icon: LayoutDashboard },
+  { name: "Kontrol Paneli", href: "/", icon: LayoutDashboard },
+  { name: "Derslerim", href: "/dashboard/courses", icon: BookOpen },
   { name: "Öğrenme Çıktıları", href: "/outcomes", icon: Target },
+  { name: "Program Çıktıları", href: "/dashboard/program-outcomes", icon: GraduationCap },
   { name: "Sınavlar", href: "/exams", icon: FileText },
   { name: "Öğrenciler", href: "/students", icon: Users },
   { name: "Raporlar", href: "/reports", icon: BarChart3 },
-];
-
-const courseNavigation = [
-  { name: "Derslerim", href: "/dashboard/courses", icon: BookOpen },
-  { name: "Yeni Ders Oluştur", href: "/dashboard/courses/create", icon: Plus, highlight: true },
 ];
 
 export function Sidebar() {
@@ -65,7 +62,7 @@ export function Sidebar() {
         <div className="flex flex-col h-full">
           {/* Logo/Brand */}
           <div className="flex items-center justify-between h-16 px-6 border-b border-border">
-            <h1 className="text-xl font-bold">MÜDEK Admin</h1>
+            <h1 className="text-xl font-bold">MÜDEK Yönetici</h1>
             <Button
               variant="ghost"
               size="icon"
@@ -94,36 +91,6 @@ export function Sidebar() {
                 >
                   <item.icon className="h-5 w-5" />
                   {item.name}
-                </Link>
-              );
-            })}
-
-            {/* Course Section Separator */}
-            <div className="my-4 border-t border-border" />
-
-            {/* Course Navigation */}
-            {courseNavigation.map((item) => {
-              const isActive = pathname === item.href || pathname?.startsWith(item.href + "/");
-              const isHighlighted = item.highlight;
-              return (
-                <Link
-                  key={item.name}
-                  href={item.href}
-                  onClick={() => setIsOpen(false)}
-                  className={cn(
-                    "flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors",
-                    isHighlighted && "border-2 border-green-600",
-                    isActive
-                      ? isHighlighted
-                        ? "bg-green-600 text-white font-bold"
-                        : "bg-primary text-primary-foreground"
-                      : isHighlighted
-                      ? "bg-green-600/10 text-green-600 border-green-600 hover:bg-green-600/20 font-semibold"
-                      : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-                  )}
-                >
-                  <item.icon className={cn("h-5 w-5", isHighlighted && "h-6 w-6")} />
-                  <span className={cn(isHighlighted && "text-base font-semibold")}>{item.name}</span>
                 </Link>
               );
             })}

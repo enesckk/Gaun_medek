@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -25,20 +25,13 @@ export default function BatchUploadPage() {
     statuses: BatchStatusItem[];
   } | null>(null);
 
-  useEffect(() => {
-    let interval: NodeJS.Timeout | null = null;
-    if (batchId) {
-      interval = setInterval(fetchStatus, 2500);
-    }
-    return () => {
-      if (interval) clearInterval(interval);
-    };
-  }, [batchId]);
-
-  const fetchStatus = async () => {
+  const fetchStatus = useCallback(async () => {
     if (!batchId) return;
     try {
       const data = await examApi.getBatchStatus(examId, batchId);
+      if (!data) {
+        throw new Error("Batch durumu alınamadı");
+      }
       setStatus({
         totalFiles: data.totalFiles,
         processedCount: data.processedCount,
@@ -47,14 +40,27 @@ export default function BatchUploadPage() {
         statuses: data.statuses || [],
       });
       if (data.processedCount >= data.totalFiles) {
-        toast.success("Batch puanlama tamamlandı");
+        toast.success(`Batch puanlama tamamlandı: ${data.successCount} başarılı, ${data.failedCount} başarısız`);
         // stop polling
-        setTimeout(() => setBatchId(null), 0);
+        setTimeout(() => setBatchId(null), 2000);
       }
     } catch (error: any) {
-      toast.error("Batch durumu okunamadı");
+      console.error("Batch status fetch error:", error);
+      const errorMessage = error?.response?.data?.message || error?.message || "Batch durumu okunamadı";
+      toast.error(errorMessage);
     }
-  };
+  }, [batchId, examId]);
+
+  useEffect(() => {
+    let interval: NodeJS.Timeout | null = null;
+    if (batchId) {
+      fetchStatus(); // İlk çağrıyı hemen yap
+      interval = setInterval(fetchStatus, 2500);
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [batchId, fetchStatus]);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const selected = Array.from(event.target.files || []);
@@ -69,6 +75,9 @@ export default function BatchUploadPage() {
     setIsUploading(true);
     try {
       const data = await examApi.startBatchScore(examId, files);
+      if (!data || !data.batchId) {
+        throw new Error("Batch ID alınamadı");
+      }
       setBatchId(data.batchId);
       setStatus({
         totalFiles: data.totalFiles,
@@ -77,9 +86,11 @@ export default function BatchUploadPage() {
         failedCount: 0,
         statuses: [],
       });
-      toast.success("Batch puanlama başlatıldı");
+      toast.success(`${data.totalFiles} dosya için batch puanlama başlatıldı`);
     } catch (error: any) {
-      toast.error(error?.response?.data?.message || "Batch başlatılamadı");
+      console.error("Batch upload error:", error);
+      const errorMessage = error?.response?.data?.message || error?.message || "Batch başlatılamadı. Lütfen tekrar deneyin.";
+      toast.error(errorMessage);
     } finally {
       setIsUploading(false);
     }
@@ -204,4 +215,5 @@ export default function BatchUploadPage() {
     </div>
   );
 }
+
 

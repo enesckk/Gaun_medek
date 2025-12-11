@@ -19,7 +19,7 @@ export function POAchievementTable({ achievements }: POAchievementTableProps) {
   if (achievements.length === 0) {
     return (
       <div className="text-center py-8 text-muted-foreground">
-        No program outcome data available
+        Program çıktısı verisi bulunamadı
       </div>
     );
   }
@@ -35,11 +35,11 @@ export function POAchievementTable({ achievements }: POAchievementTableProps) {
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>PO Code</TableHead>
-            <TableHead>Description</TableHead>
-            <TableHead className="text-center">Contributing LOs</TableHead>
-            <TableHead className="text-center">Avg Achievement %</TableHead>
-            <TableHead>Visual</TableHead>
+            <TableHead>PÇ Kodu</TableHead>
+            <TableHead>Açıklama</TableHead>
+            <TableHead className="text-center">Katkıda Bulunan ÖÇ</TableHead>
+            <TableHead className="text-center">Ortalama Başarı %</TableHead>
+            <TableHead>Görsel</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>

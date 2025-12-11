@@ -8,8 +8,8 @@ import { Toaster } from "sonner";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "MÜDEK Admin Dashboard",
-  description: "Exam assessment and outcome evaluation system",
+  title: "MÜDEK Yönetim Paneli",
+  description: "Sınav değerlendirme ve çıktı analiz sistemi",
 };
 
 export default function RootLayout({

@@ -15,7 +15,7 @@ import { Button } from "@/components/ui/button";
 import { programOutcomeApi } from "@/lib/api/programOutcomeApi";
 
 interface DeleteProgramOutcomeDialogProps {
-  programOutcomeId: string;
+  departmentId: string;
   programOutcomeCode: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -23,7 +23,7 @@ interface DeleteProgramOutcomeDialogProps {
 }
 
 export function DeleteProgramOutcomeDialog({
-  programOutcomeId,
+  departmentId,
   programOutcomeCode,
   open,
   onOpenChange,
@@ -33,17 +33,22 @@ export function DeleteProgramOutcomeDialog({
   const [isDeleting, setIsDeleting] = useState(false);
 
   const handleDelete = async () => {
+    if (!departmentId) {
+      toast.error("Bölüm bilgisi bulunamadı");
+      return;
+    }
+    
     setIsDeleting(true);
     try {
-      await programOutcomeApi.remove(programOutcomeId);
-      toast.success("Program Outcome deleted");
+      await programOutcomeApi.delete(departmentId, programOutcomeCode);
+      toast.success("Program çıktısı başarıyla silindi");
       onOpenChange(false);
       router.refresh();
       onSuccess?.();
     } catch (error: any) {
       const errorMessage =
         error.response?.data?.message ||
-        "Failed to delete program outcome. It may be referenced by learning outcomes.";
+        "Program çıktısı silinemedi. Öğrenme çıktılarında kullanılıyor olabilir.";
       toast.error(errorMessage);
     } finally {
       setIsDeleting(false);
@@ -54,12 +59,12 @@ export function DeleteProgramOutcomeDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent onClose={() => onOpenChange(false)}>
         <DialogHeader>
-          <DialogTitle>Delete Program Outcome</DialogTitle>
+          <DialogTitle>Program Çıktısını Sil</DialogTitle>
           <DialogDescription>
-            Deleting this Program Outcome will break MÜDEK mappings. Are you absolutely sure?
+            <strong>{programOutcomeCode}</strong> program çıktısını silmek istediğinizden emin misiniz?
             <br />
             <br />
-            <strong>{programOutcomeCode}</strong> will be permanently deleted. This action cannot be undone.
+            Bu program çıktısını silmek MÜDEK eşleştirmelerini bozabilir. Bu işlem geri alınamaz.
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>
@@ -68,14 +73,14 @@ export function DeleteProgramOutcomeDialog({
             onClick={() => onOpenChange(false)}
             disabled={isDeleting}
           >
-            Cancel
+            İptal
           </Button>
           <Button
             variant="destructive"
             onClick={handleDelete}
             disabled={isDeleting}
           >
-            {isDeleting ? "Deleting..." : "Delete"}
+            {isDeleting ? "Siliniyor..." : "Sil"}
           </Button>
         </DialogFooter>
       </DialogContent>

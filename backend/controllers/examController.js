@@ -140,6 +140,19 @@ const createExam = async (req, res) => {
       return res.status(404).json({ success: false, message: "Ders bulunamadı" });
     }
 
+    // Check if examCode already exists for this course
+    const normalizedExamCode = examCode.trim();
+    const existingExam = await Exam.findOne({
+      courseId: courseId,
+      examCode: normalizedExamCode,
+    });
+    if (existingExam) {
+      return res.status(400).json({
+        success: false,
+        message: `"${normalizedExamCode}" sınav kodu bu ders için zaten mevcut. Aynı ders içinde aynı sınav kodu kullanılamaz.`,
+      });
+    }
+
     if (!Array.isArray(course.learningOutcomes) || course.learningOutcomes.length === 0) {
       return res.status(400).json({
         success: false,
@@ -180,6 +193,22 @@ const createExam = async (req, res) => {
 
     const savedExam = await exam.save();
 
+    // Update course's embedded exam information
+    if (examType === "midterm") {
+      course.midtermExam = {
+        examCode: examCode.trim(),
+        questionCount: Number(questionCount),
+        maxScorePerQuestion: Number(maxScorePerQuestion),
+      };
+    } else if (examType === "final") {
+      course.finalExam = {
+        examCode: examCode.trim(),
+        questionCount: Number(questionCount),
+        maxScorePerQuestion: Number(maxScorePerQuestion),
+      };
+    }
+    await course.save();
+
     return res.status(201).json({
       success: true,
       data: savedExam,
@@ -198,6 +227,14 @@ const getExamsByCourse = async (req, res) => {
   try {
     const { courseId } = req.params;
 
+    // Validate courseId
+    if (!courseId || courseId === 'undefined' || courseId === 'null' || courseId === '[object Object]') {
+      return res.status(400).json({ 
+        success: false, 
+        message: `Geçersiz ders ID: ${courseId}` 
+      });
+    }
+
     const course = await Course.findById(courseId);
     if (!course) {
       return res.status(404).json({ success: false, message: "Ders bulunamadı" });
@@ -210,9 +247,10 @@ const getExamsByCourse = async (req, res) => {
       data: exams,
     });
   } catch (error) {
+    console.error('Error in getExamsByCourse:', error);
     return res.status(500).json({
       success: false,
-      message: error.message,
+      message: error.message || "Sınav bilgileri alınamadı",
     });
   }
 };
@@ -265,6 +303,22 @@ const updateExam = async (req, res) => {
       return res.status(404).json({ success: false, message: "Ders bulunamadı" });
     }
 
+    // Check if examCode already exists for this course (excluding current exam)
+    if (examCode !== undefined) {
+      const normalizedExamCode = examCode.trim();
+      const duplicateExam = await Exam.findOne({
+        courseId: existingExam.courseId,
+        examCode: normalizedExamCode,
+        _id: { $ne: id }, // Exclude current exam
+      });
+      if (duplicateExam) {
+        return res.status(400).json({
+          success: false,
+          message: `"${normalizedExamCode}" sınav kodu bu ders için zaten mevcut. Aynı ders içinde aynı sınav kodu kullanılamaz.`,
+        });
+      }
+    }
+
     if (examType && !["midterm", "final"].includes(examType)) {
       return res.status(400).json({
         success: false,
@@ -307,6 +361,23 @@ const updateExam = async (req, res) => {
       new: true,
       runValidators: true,
     });
+
+    // Update course's embedded exam information
+    const currentExamType = examType || existingExam.examType;
+    if (currentExamType === "midterm") {
+      course.midtermExam = {
+        examCode: (examCode !== undefined ? examCode.trim() : existingExam.examCode),
+        questionCount: (questionCount !== undefined ? Number(questionCount) : existingExam.questionCount),
+        maxScorePerQuestion: (maxScorePerQuestion !== undefined ? Number(maxScorePerQuestion) : existingExam.maxScorePerQuestion),
+      };
+    } else if (currentExamType === "final") {
+      course.finalExam = {
+        examCode: (examCode !== undefined ? examCode.trim() : existingExam.examCode),
+        questionCount: (questionCount !== undefined ? Number(questionCount) : existingExam.questionCount),
+        maxScorePerQuestion: (maxScorePerQuestion !== undefined ? Number(maxScorePerQuestion) : existingExam.maxScorePerQuestion),
+      };
+    }
+    await course.save();
 
     return res.status(200).json({
       success: true,

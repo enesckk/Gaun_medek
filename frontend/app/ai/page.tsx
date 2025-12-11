@@ -11,10 +11,10 @@ export default function AIPage() {
   const router = useRouter();
   const [isProcessing, setIsProcessing] = useState(false);
   const [processingSteps, setProcessingSteps] = useState<ProcessingStep[]>([
-    { id: "extract", label: "Extracting data from document", status: "pending" },
-    { id: "detect", label: "Detecting student number", status: "pending" },
-    { id: "crop", label: "Analyzing question regions", status: "pending" },
-    { id: "gemini", label: "Sending to Gemini Vision API", status: "pending" },
+    { id: "extract", label: "Belgeden veri çıkarılıyor", status: "pending" },
+    { id: "detect", label: "Öğrenci numarası tespit ediliyor", status: "pending" },
+    { id: "crop", label: "Soru bölgeleri analiz ediliyor", status: "pending" },
+    { id: "gemini", label: "Gemini Vision API'ye gönderiliyor", status: "pending" },
   ]);
 
   const handleFileSelect = async (file: File) => {
@@ -78,7 +78,7 @@ export default function AIPage() {
       // Redirect to preview page
       router.push(`/ai/preview?sessionId=${response.sessionId}`);
     } catch (error: any) {
-      toast.error(error.response?.data?.message || "Failed to process document");
+      toast.error(error.response?.data?.message || "Belge işlenirken hata oluştu");
       setIsProcessing(false);
       setProcessingSteps((steps) =>
         steps.map((s) => ({ ...s, status: "pending" as const }))
@@ -88,12 +88,9 @@ export default function AIPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-3xl font-bold tracking-tight">AI Exam Processing</h2>
-        <p className="text-muted-foreground">
-          Upload exam documents for AI-powered automatic scoring
-        </p>
-      </div>
+      <p className="text-muted-foreground">
+        AI destekli otomatik puanlama için sınav belgelerini yükleyin
+      </p>
 
       {!isProcessing ? (
         <FileUploadCard onFileSelect={handleFileSelect} />

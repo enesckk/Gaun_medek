@@ -36,14 +36,16 @@ export function DeleteOutcomeDialog({
     setIsDeleting(true);
     try {
       await learningOutcomeApi.remove(outcomeId);
-      toast.success("Learning Outcome deleted successfully");
+      toast.success("Öğrenme çıktısı başarıyla silindi");
       onOpenChange(false);
       router.refresh();
+      // Dispatch custom event to notify other pages (like courses page) to refresh
+      window.dispatchEvent(new CustomEvent('learningOutcomeDeleted'));
       onSuccess?.();
     } catch (error: any) {
       const errorMessage =
         error.response?.data?.message ||
-        "Failed to delete learning outcome. It may be referenced by exam questions.";
+        "Öğrenme çıktısı silinemedi. Sınav sorularında kullanılıyor olabilir.";
       toast.error(errorMessage);
     } finally {
       setIsDeleting(false);
@@ -54,13 +56,12 @@ export function DeleteOutcomeDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent onClose={() => onOpenChange(false)}>
         <DialogHeader>
-          <DialogTitle>Delete Learning Outcome</DialogTitle>
+          <DialogTitle>Öğrenme Çıktısını Sil</DialogTitle>
           <DialogDescription>
-            Are you sure you want to delete <strong>{outcomeCode}</strong>?
+            <strong>{outcomeCode}</strong> öğrenme çıktısını silmek istediğinizden emin misiniz?
             <br />
             <br />
-            Deleting this Learning Outcome will break MÜDEK mappings. This action
-            cannot be undone.
+            Bu öğrenme çıktısını silmek MÜDEK eşleştirmelerini bozabilir. Bu işlem geri alınamaz.
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>
@@ -69,14 +70,14 @@ export function DeleteOutcomeDialog({
             onClick={() => onOpenChange(false)}
             disabled={isDeleting}
           >
-            Cancel
+            İptal
           </Button>
           <Button
             variant="destructive"
             onClick={handleDelete}
             disabled={isDeleting}
           >
-            {isDeleting ? "Deleting..." : "Delete"}
+            {isDeleting ? "Siliniyor..." : "Sil"}
           </Button>
         </DialogFooter>
       </DialogContent>
