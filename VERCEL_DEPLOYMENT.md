@@ -136,3 +136,5 @@ Frontend otomatik olarak aynı domain'deki `/api` endpoint'ini kullanır:
 - [Next.js Deployment](https://nextjs.org/docs/deployment)
 
 
+
+

@@ -184,3 +184,5 @@ Gaun_mudek-/
 **Öneri:** Şimdilik mevcut yapıyı koruyun, yeni özellikler eklerken Next.js API Routes kullanın, zamanla migrate edin.
 
 
+
+

@@ -89,3 +89,5 @@ Vercel UI'da:
 `vercel.json` dosyanız zaten mevcut ve doğru yapılandırılmış. Vercel UI'da override'ları **OFF** yapın, `vercel.json` kullanılsın.
 
 
+
+

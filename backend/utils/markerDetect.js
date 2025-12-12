@@ -81,8 +81,39 @@ export async function detectMarkers(imageBuffer) {
 
     if (cvType === 'opencv.js') {
       // opencv.js API - convert PNG buffer to Mat
+      // Optimize: Resize large images before processing to save memory
+      // Marker detection doesn't need full resolution (max 2000px width/height)
+      const maxDimension = 2000;
+      let processedBuffer = imageBuffer;
+      let originalWidth = 0;
+      let originalHeight = 0;
+      let scaleRatio = 1.0;
+
+      // Get image dimensions first
+      const metadata = await sharp(imageBuffer).metadata();
+      originalWidth = metadata.width || 1654;
+      originalHeight = metadata.height || 2339;
+      
+      // Resize if too large (save memory)
+      if (originalWidth > maxDimension || originalHeight > maxDimension) {
+        const targetWidth = originalWidth > originalHeight 
+          ? maxDimension 
+          : Math.round((originalWidth / originalHeight) * maxDimension);
+        const targetHeight = originalHeight > originalWidth 
+          ? maxDimension 
+          : Math.round((originalHeight / originalWidth) * maxDimension);
+        
+        scaleRatio = originalWidth / targetWidth; // Store scale for later
+        processedBuffer = await sharp(imageBuffer)
+          .resize(targetWidth, targetHeight, { fit: 'inside', withoutEnlargement: true })
+          .png()
+          .toBuffer();
+        
+        console.log(`   🔄 Görüntü ${originalWidth}x${originalHeight} -> ${targetWidth}x${targetHeight} olarak küçültüldü (bellek tasarrufu)`);
+      }
+      
       // Use Sharp to decode PNG and get raw image data
-      const imageData = await sharp(imageBuffer)
+      const imageData = await sharp(processedBuffer)
         .raw()
         .ensureAlpha()
         .toBuffer({ resolveWithObject: true });
@@ -92,10 +123,11 @@ export async function detectMarkers(imageBuffer) {
       imageHeight = info.height;
       
       // Create Mat from image data (RGBA format)
+      // Use TypedArray instead of Array.from for better memory efficiency
       image = new opencv.Mat(info.height, info.width, opencv.CV_8UC4);
       
-      // Copy data to Mat - use matFromArray for safety
-      const dataArray = Array.from(data);
+      // Copy data to Mat using TypedArray (more memory efficient than Array.from)
+      const dataArray = new Uint8Array(data);
       const tempMat = opencv.matFromArray(info.height, info.width, opencv.CV_8UC4, dataArray);
       tempMat.copyTo(image);
       tempMat.delete();
