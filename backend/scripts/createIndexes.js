@@ -5,10 +5,12 @@ import dotenv from "dotenv";
 dotenv.config();
 
 const MONGO_URI = process.env.MONGODB_URI || process.env.MONGO_URI || "mongodb://localhost:27017/mudekdb";
+const MONGODB_DB = process.env.MONGODB_DB || "mudek";
 
 async function createIndexes() {
   try {
     await mongoose.connect(MONGO_URI, {
+      dbName: MONGODB_DB,
       serverSelectionTimeoutMS: 10000,
     });
     console.log("✅ MongoDB bağlantısı kuruldu");
@@ -82,3 +84,7 @@ async function createIndexes() {
 }
 
 createIndexes();
+
+
+
+

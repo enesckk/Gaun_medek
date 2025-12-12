@@ -5,8 +5,8 @@
   "type": "module",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js",
-    "dev": "nodemon server.js",
+    "start": "node --max-old-space-size=4096 server.js",
+    "dev": "nodemon --exec \"node --max-old-space-size=4096\" server.js",
     "backup": "node scripts/backupData.js",
     "check-data": "node scripts/checkDataIntegrity.js",
     "cleanup-duplicates": "node scripts/cleanupDuplicates.js",

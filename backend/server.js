@@ -16,8 +16,15 @@ app.use(cors());
 app.use(express.json());
 
 // Static file serving for debug images
-const debugImagesPath = path.join(__dirname, "temp", "exam_crops");
-app.use("/api/debug-images", express.static(debugImagesPath));
+// Vercel'de /tmp, lokal'de __dirname/temp kullan
+const isVercel = process.env.VERCEL === "1";
+const debugImagesPath = isVercel 
+  ? path.join("/tmp", "exam_crops")
+  : path.join(__dirname, "temp", "exam_crops");
+// Vercel'de static file serving çalışmaz, sadece lokal'de
+if (!isVercel) {
+  app.use("/api/debug-images", express.static(debugImagesPath));
+}
 
 // Debug endpoint to list available images
 app.get("/api/debug-images-list", (req, res) => {
@@ -123,6 +130,7 @@ app.use("/api/assessments", assessmentRoutes);
 
 const PORT = process.env.PORT || 5000;
 const MONGO_URI = process.env.MONGODB_URI || process.env.MONGO_URI;
+const MONGODB_DB = process.env.MONGODB_DB || "mudek";
 
 async function startServer() {
   if (!MONGO_URI) {
@@ -132,6 +140,7 @@ async function startServer() {
 
   try {
     await mongoose.connect(MONGO_URI, {
+      dbName: MONGODB_DB, // Veritabanı adı
       serverSelectionTimeoutMS: 10000,
       // Veri kaybını önlemek için önemli ayarlar
       bufferCommands: true, // Bağlantı yokken komutları buffer'la
@@ -141,7 +150,7 @@ async function startServer() {
       family: 4, // IPv4 kullan
     });
     console.log("✅ MongoDB bağlantısı kuruldu");
-    console.log(`📊 Veritabanı: ${MONGO_URI.split('/').pop() || 'mudekdb'}`);
+    console.log(`📊 Veritabanı: ${MONGODB_DB}`);
 
     // Bağlantı olaylarını dinle
     mongoose.connection.on('error', (err) => {
@@ -156,9 +165,15 @@ async function startServer() {
       console.log('✅ MongoDB yeniden bağlandı');
     });
 
-    app.listen(PORT, () =>
-      console.log(`Backend running at http://localhost:${PORT}`)
-    );
+    // Vercel serverless function için app.listen kullanmıyoruz
+    // Sadece lokal geliştirme için
+    if (process.env.VERCEL !== "1") {
+      app.listen(PORT, () =>
+        console.log(`Backend running at http://localhost:${PORT}`)
+      );
+    } else {
+      console.log("✅ Backend Vercel serverless function olarak çalışıyor");
+    }
   } catch (err) {
     console.error("❌ MongoDB bağlantı hatası:", err.message);
     
@@ -171,8 +186,20 @@ async function startServer() {
       console.error(`\n   Bağlantı URI: ${MONGO_URI}`);
     }
     
-    process.exit(1);
+    if (process.env.VERCEL !== "1") {
+      process.exit(1);
+    }
   }
 }
 
-startServer();
+// Vercel serverless function için export
+if (process.env.VERCEL === "1") {
+  // Vercel'de MongoDB bağlantısını async olarak başlat
+  startServer().catch(console.error);
+} else {
+  // Lokal geliştirme için normal başlat
+  startServer();
+}
+
+// Express app'i export et (Vercel serverless function için)
+export default app;

@@ -18,8 +18,11 @@ async function pdfToPng(pdfInput) {
     let isTempFile = false;
 
     // If input is buffer, save to temp file
+    // Vercel'de /tmp, lokal'de __dirname/../temp kullan
     if (Buffer.isBuffer(pdfInput)) {
-      tempPdfPath = path.join(__dirname, "../temp", `temp_${Date.now()}.pdf`);
+      const isVercel = process.env.VERCEL === "1";
+      const baseTempDir = isVercel ? "/tmp" : path.join(__dirname, "../temp");
+      tempPdfPath = path.join(baseTempDir, `temp_${Date.now()}.pdf`);
       const tempDir = path.dirname(tempPdfPath);
       if (!fs.existsSync(tempDir)) {
         fs.mkdirSync(tempDir, { recursive: true });
@@ -57,9 +60,11 @@ async function pdfToPng(pdfInput) {
       return { buffer: pngBuffer, filePath: pngPath };
     } catch (popplerError) {
       // Fallback to pdftoppm (poppler-utils)
+      // Vercel'de /tmp, lokal'de process.cwd()/temp kullan
+      const isVercel = process.env.VERCEL === "1";
+      const baseTempDir = isVercel ? "/tmp" : path.join(process.cwd(), "temp");
       const outputPath = path.join(
-        process.cwd(),
-        "temp",
+        baseTempDir,
         `output_${Date.now()}.png`
       );
       const outputDir = path.dirname(outputPath);

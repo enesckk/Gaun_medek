@@ -1,38 +1,61 @@
 import sharp from "sharp";
 
-// Try to load OpenCV at module level - support both opencv4nodejs and opencv.js
+// Lazy load OpenCV - only load when needed (saves memory)
 let cv = null;
 let opencvType = null; // 'opencv4nodejs' or 'opencv.js'
+let opencvLoadPromise = null; // Cache the load promise
 
-try {
-  // First try opencv4nodejs (preferred, better performance)
-  const cvModule = await import("opencv4nodejs").catch(() => null);
-  if (cvModule) {
-    cv = cvModule?.default || cvModule || null;
-    if (cv) {
-      opencvType = 'opencv4nodejs';
-      global.cv = cv;
-      global.opencvType = opencvType;
-    }
+/**
+ * Lazy load OpenCV - only loads when first needed
+ */
+async function loadOpenCV() {
+  // Return cached instance if already loaded
+  if (cv) {
+    return { cv, opencvType };
   }
-} catch (error) {
-  // Ignore, try opencv.js
-}
 
-// If opencv4nodejs not available, try opencv.js
-if (!cv) {
-  try {
-    // opencv.js uses CommonJS require
-    const opencvJs = await import("opencv.js").catch(() => null);
-    if (opencvJs) {
-      cv = opencvJs.default || opencvJs;
-      opencvType = 'opencv.js';
-      global.cv = cv;
-      global.opencvType = opencvType;
-    }
-  } catch (error) {
-    cv = null;
+  // Return cached promise if already loading
+  if (opencvLoadPromise) {
+    return opencvLoadPromise;
   }
+
+  // Start loading
+  opencvLoadPromise = (async () => {
+    try {
+      // First try opencv4nodejs (preferred, better performance)
+      const cvModule = await import("opencv4nodejs").catch(() => null);
+      if (cvModule) {
+        const loadedCv = cvModule?.default || cvModule || null;
+        if (loadedCv) {
+          cv = loadedCv;
+          opencvType = 'opencv4nodejs';
+          global.cv = cv;
+          global.opencvType = opencvType;
+          return { cv, opencvType };
+        }
+      }
+    } catch (error) {
+      // Ignore, try opencv.js
+    }
+
+    // If opencv4nodejs not available, try opencv.js
+    try {
+      const opencvJs = await import("opencv.js").catch(() => null);
+      if (opencvJs) {
+        cv = opencvJs.default || opencvJs;
+        opencvType = 'opencv.js';
+        global.cv = cv;
+        global.opencvType = opencvType;
+        return { cv, opencvType };
+      }
+    } catch (error) {
+      // Ignore
+    }
+
+    return { cv: null, opencvType: null };
+  })();
+
+  return opencvLoadPromise;
 }
 
 /**
@@ -42,8 +65,10 @@ if (!cv) {
  */
 export async function detectMarkers(imageBuffer) {
   try {
-    const opencv = global.cv || cv;
-    const cvType = global.opencvType || opencvType;
+    // Lazy load OpenCV when needed
+    const { cv: loadedCv, opencvType: loadedType } = await loadOpenCV();
+    const opencv = loadedCv || global.cv || cv;
+    const cvType = loadedType || global.opencvType || opencvType;
 
     if (!opencv) {
       throw new Error("OpenCV not available");
