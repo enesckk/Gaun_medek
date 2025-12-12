@@ -192,10 +192,69 @@ async function startServer() {
   }
 }
 
+// MongoDB connection cache (Vercel serverless functions için)
+let cachedConnection = null;
+
+// Vercel serverless function için MongoDB bağlantısını ensure eden middleware
+async function ensureMongoConnection() {
+  if (cachedConnection) {
+    return cachedConnection;
+  }
+
+  const MONGO_URI = process.env.MONGODB_URI || process.env.MONGO_URI;
+  const MONGODB_DB = process.env.MONGODB_DB || "mudek";
+
+  if (!MONGO_URI) {
+    throw new Error("MONGODB_URI environment variable is not set");
+  }
+
+  try {
+    // Zaten bağlı mı kontrol et
+    if (mongoose.connection.readyState === 1) {
+      cachedConnection = mongoose.connection;
+      return cachedConnection;
+    }
+
+    // Bağlantıyı kur
+    await mongoose.connect(MONGO_URI, {
+      dbName: MONGODB_DB,
+      serverSelectionTimeoutMS: 10000,
+      bufferCommands: true,
+      maxPoolSize: 10,
+      minPoolSize: 1,
+      socketTimeoutMS: 45000,
+      family: 4,
+    });
+
+    cachedConnection = mongoose.connection;
+    console.log("✅ MongoDB bağlantısı kuruldu (Vercel serverless)");
+    return cachedConnection;
+  } catch (error) {
+    console.error("❌ MongoDB bağlantı hatası:", error);
+    throw error;
+  }
+}
+
+// Express middleware: Her request'te MongoDB bağlantısını kontrol et
+app.use(async (req, res, next) => {
+  if (process.env.VERCEL === "1") {
+    try {
+      await ensureMongoConnection();
+    } catch (error) {
+      return res.status(500).json({
+        success: false,
+        message: "Database connection failed",
+        error: error.message,
+      });
+    }
+  }
+  next();
+});
+
 // Vercel serverless function için export
 if (process.env.VERCEL === "1") {
-  // Vercel'de MongoDB bağlantısını async olarak başlat
-  startServer().catch(console.error);
+  // Vercel'de sadece log yaz, bağlantı middleware'de yapılacak
+  console.log("✅ Backend Vercel serverless function olarak çalışıyor");
 } else {
   // Lokal geliştirme için normal başlat
   startServer();
