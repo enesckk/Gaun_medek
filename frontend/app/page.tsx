@@ -44,10 +44,9 @@ export default function DashboardPage() {
         return sum + (course.learningOutcomes?.length || 0);
       }, 0);
 
-      // Calculate total program outcomes from all departments
-      const totalPOs = departments.reduce((sum, dept) => {
-        return sum + (dept.programOutcomes?.length || 0);
-      }, 0);
+      // Program outcomes are department-specific and would require multiple API calls
+      // For now, set to 0 or calculate separately if needed
+      const totalPOs = 0;
 
       setStats({
         totalCourses: courses.length,
