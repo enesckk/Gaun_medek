@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,7 +17,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
-export default function AIPreviewPage() {
+function AIPreviewContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const sessionId = searchParams.get("sessionId");
@@ -209,3 +209,17 @@ export default function AIPreviewPage() {
   );
 }
 
+export default function AIPreviewPage() {
+  return (
+    <Suspense fallback={
+      <div className="space-y-6">
+        <div>
+          <h2 className="text-3xl font-bold tracking-tight">Score Preview</h2>
+          <p className="text-muted-foreground">Loading preview data...</p>
+        </div>
+      </div>
+    }>
+      <AIPreviewContent />
+    </Suspense>
+  );
+}
