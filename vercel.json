@@ -2,7 +2,7 @@
   "version": 2,
   "builds": [
     {
-      "src": "api/index.mjs",
+      "src": "api/index.js",
       "use": "@vercel/node"
     },
     {
@@ -13,13 +13,13 @@
   "routes": [
     {
       "src": "/api/(.*)",
-      "dest": "/api/index.mjs"
+      "dest": "/api/index.js"
     },
     {
       "src": "/(.*)",
       "dest": "frontend/$1"
     }
   ],
-      "installCommand": "cd api && npm install && cp -r ../backend ./backend && rm -rf ./backend/node_modules && cp -r ./node_modules ./backend/node_modules && cd ../frontend && npm install"
+      "installCommand": "npm install && cd backend && npm install && cd ../frontend && npm install"
 }
 

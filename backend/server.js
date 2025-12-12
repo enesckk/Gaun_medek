@@ -251,12 +251,8 @@ app.use(async (req, res, next) => {
   next();
 });
 
-// Vercel serverless function için export
-if (process.env.VERCEL === "1") {
-  // Vercel'de sadece log yaz, bağlantı middleware'de yapılacak
-  console.log("✅ Backend Vercel serverless function olarak çalışıyor");
-} else {
-  // Lokal geliştirme için normal başlat
+// Lokal geliştirme için server'ı başlat (Vercel'de startServer çağrılmaz)
+if (process.env.VERCEL !== "1") {
   startServer();
 }
 

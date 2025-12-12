@@ -36,6 +36,7 @@ build/
 out/
 frontend/.next/
 frontend/.env.local
+api/backend/
 
 # Temporary files
 tmp/
