@@ -12,7 +12,7 @@ const allowedOrigins = [
   process.env.FRONTEND_URL,
   'http://localhost:3000',
   'http://localhost:3001',
-  'https://gaun-mudek.vercel.app', // Vercel frontend URL
+  'https://gaun-mudek.vercel.app', // Vercel frontend URL (hardcoded)
 ].filter(Boolean);
 
 console.log('🔒 CORS Allowed Origins:', allowedOrigins);
@@ -21,8 +21,9 @@ console.log('🔒 NODE_ENV:', process.env.NODE_ENV);
 
 app.use(cors({
   origin: function (origin, callback) {
-    // Same-origin requests (no origin header)
+    // Same-origin requests (no origin header) - allow
     if (!origin) {
+      console.log('✅ CORS: No origin header, allowing');
       return callback(null, true);
     }
     
@@ -30,26 +31,35 @@ app.use(cors({
     
     // Check if origin is in allowed list
     if (allowedOrigins.includes(origin)) {
-      console.log('✅ CORS Allowed:', origin);
+      console.log('✅ CORS: Origin in allowed list');
       return callback(null, true);
     }
     
     // Development mode: allow all origins
     if (process.env.NODE_ENV !== 'production') {
-      console.log('✅ CORS Allowed (dev mode):', origin);
+      console.log('✅ CORS: Development mode, allowing all');
       return callback(null, true);
     }
     
-    // Production: also allow vercel.app domains as fallback
-    if (origin.includes('vercel.app') || origin.includes('onrender.com')) {
-      console.log('✅ CORS Allowed (vercel/render):', origin);
+    // Production: allow vercel.app and onrender.com domains (for flexibility)
+    if (origin.endsWith('.vercel.app') || origin.endsWith('.onrender.com')) {
+      console.log('✅ CORS: Vercel/Render domain detected, allowing');
       return callback(null, true);
     }
     
-    console.log('❌ CORS Blocked:', origin);
+    // Also check if origin starts with https://gaun-mudek (any subdomain)
+    if (origin.startsWith('https://gaun-mudek')) {
+      console.log('✅ CORS: gaun-mudek domain detected, allowing');
+      return callback(null, true);
+    }
+    
+    console.log('❌ CORS: Blocked origin:', origin);
+    console.log('❌ CORS: Allowed origins:', allowedOrigins);
     callback(new Error('Not allowed by CORS'));
   },
   credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
 }));
 app.use(express.json());
 
