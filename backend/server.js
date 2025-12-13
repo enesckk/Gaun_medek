@@ -7,7 +7,26 @@ dotenv.config();
 
 const app = express();
 
-app.use(cors());
+// CORS configuration - Frontend URL'ini allow et
+const allowedOrigins = [
+  process.env.FRONTEND_URL,
+  'http://localhost:3000',
+  'http://localhost:3001',
+].filter(Boolean);
+
+app.use(cors({
+  origin: function (origin, callback) {
+    // Same-origin requests veya allowed origins
+    // Production'da sadece FRONTEND_URL'e izin ver
+    // Development'ta localhost'a izin ver
+    if (!origin || allowedOrigins.some(allowed => origin.startsWith(allowed)) || process.env.NODE_ENV !== 'production') {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
+}));
 app.use(express.json());
 
 app.get("/api/health", (req, res) => {
@@ -51,7 +70,9 @@ app.use("/api/assessments", assessmentRoutes);
 
 const PORT = process.env.PORT || 5000;
 const MONGO_URI = process.env.MONGODB_URI || process.env.MONGO_URI;
+const MONGODB_DB = process.env.MONGODB_DB || "mudek";
 
+// Render veya lokal için server'ı başlat
 async function startServer() {
   if (!MONGO_URI) {
     console.error("❌ MONGODB_URI (veya MONGO_URI) tanımlı değil. .env dosyanızı kontrol edin.");
@@ -60,17 +81,24 @@ async function startServer() {
 
   try {
     await mongoose.connect(MONGO_URI, {
+      dbName: MONGODB_DB,
       serverSelectionTimeoutMS: 10000,
+      bufferCommands: true,
+      maxPoolSize: 10,
+      minPoolSize: 1,
+      socketTimeoutMS: 45000,
+      family: 4,
     });
     console.log("✅ MongoDB bağlantısı kuruldu");
+    console.log(`📊 Veritabanı: ${MONGODB_DB}`);
 
-    app.listen(PORT, () =>
-      console.log(`Backend running at http://localhost:${PORT}`)
+    const serverPort = process.env.PORT || PORT;
+    app.listen(serverPort, () =>
+      console.log(`🚀 Backend running on port ${serverPort}`)
     );
   } catch (err) {
     console.error("❌ MongoDB bağlantı hatası:", err.message);
     
-    // ECONNREFUSED hatası MongoDB servisinin çalışmadığını gösterir
     if (err.message.includes("ECONNREFUSED") || err.message.includes("connect")) {
       console.error("\n💡 MongoDB servisi çalışmıyor. Lütfen MongoDB'yi başlatın:");
       console.error("   Windows: Yönetici olarak PowerShell açın ve şu komutu çalıştırın:");
@@ -83,4 +111,5 @@ async function startServer() {
   }
 }
 
+// Server'ı başlat
 startServer();

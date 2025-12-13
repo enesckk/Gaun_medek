@@ -32,6 +32,9 @@ out/
 frontend/.next/
 frontend/.env.local
 
+# Vercel API folder (artık kullanılmıyor - ayrı deploy)
+api/
+
 # Temporary files
 tmp/
 temp/

@@ -1,6 +1,12 @@
 import axios from "axios";
 
-const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+// Backend URL'i environment variable'dan al
+// Production'da: Render backend URL'i (örn: https://your-backend.onrender.com/api)
+// Development'ta: localhost:5000
+const API_URL = 
+  process.env.NEXT_PUBLIC_API_BASE_URL || 
+  process.env.NEXT_PUBLIC_API_URL || 
+  "http://localhost:5000/api";
 
 export const apiClient = axios.create({
   baseURL: API_URL,
