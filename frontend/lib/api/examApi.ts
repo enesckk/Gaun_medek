@@ -119,14 +119,12 @@ export const examApi = {
   },
 
   getByCourse: async (courseId: string): Promise<Exam[]> => {
-    // Ensure courseId is a string
-    const id = typeof courseId === 'string' ? courseId : courseId?.toString() || String(courseId);
-    if (!id || id === '[object Object]' || id === 'undefined' || id === 'null') {
+    if (!courseId || courseId === '[object Object]' || courseId === 'undefined' || courseId === 'null') {
       console.error('Invalid courseId provided to getByCourse:', courseId);
       return [];
     }
     try {
-      const response = await apiClient.get(`/exams/course/${id}`);
+      const response = await apiClient.get(`/exams/course/${courseId}`);
       return response.data.data || [];
     } catch (error) {
       console.error('Error fetching exams by course:', error);
@@ -135,14 +133,12 @@ export const examApi = {
   },
 
   getById: async (id: string): Promise<Exam> => {
-    // Ensure id is a string
-    const examId = typeof id === 'string' ? id : id?.toString() || String(id);
-    if (!examId || examId === 'undefined' || examId === 'null' || examId === '[object Object]') {
+    if (!id || id === 'undefined' || id === 'null' || id === '[object Object]') {
       console.error('Invalid exam ID provided to getById:', id);
-      throw new Error(`Geçersiz sınav ID: ${examId}`);
+      throw new Error(`Geçersiz sınav ID: ${id}`);
     }
     try {
-      const response = await apiClient.get(`/exams/${examId}`);
+      const response = await apiClient.get(`/exams/${id}`);
       return response.data.data;
     } catch (error: any) {
       console.error('Error fetching exam by ID:', error);
