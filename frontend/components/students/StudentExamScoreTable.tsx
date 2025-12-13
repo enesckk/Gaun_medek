@@ -40,7 +40,7 @@ export function StudentExamScoreTable({ scores }: StudentExamScoreTableProps) {
 
   const getExamTitle = (score: Score): string => {
     if (typeof score.examId === "string") return "Bilinmeyen Sınav";
-    return score.examId.title || "Bilinmeyen Sınav";
+    return score.examId.title || score.examId.examCode || "Bilinmeyen Sınav";
   };
 
   const getExamType = (score: Score): string => {

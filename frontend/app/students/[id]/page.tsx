@@ -8,18 +8,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { StudentForm } from "@/components/students/StudentForm";
+import { StudentExamScoreTable } from "@/components/students/StudentExamScoreTable";
 import { StudentLOAchievementCard } from "@/components/students/StudentLOAchievementCard";
 import { StudentPOAchievementCard } from "@/components/students/StudentPOAchievementCard";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { studentApi, type Student } from "@/lib/api/studentApi";
-import { scoreApi, type LOAchievement, type POAchievement } from "@/lib/api/scoreApi";
+import { scoreApi, type Score, type LOAchievement, type POAchievement } from "@/lib/api/scoreApi";
 import { courseApi, type Course } from "@/lib/api/courseApi";
 
 export default function StudentDetailPage() {
@@ -30,12 +23,12 @@ export default function StudentDetailPage() {
   const isEditMode = searchParams.get("edit") === "true";
 
   const [student, setStudent] = useState<Student | null>(null);
+  const [scores, setScores] = useState<Score[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
   const [selectedCourseId, setSelectedCourseId] = useState<string>("");
   const [loAchievements, setLOAchievements] = useState<LOAchievement[]>([]);
   const [poAchievements, setPOAchievements] = useState<POAchievement[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [examResults, setExamResults] = useState<Student["examResults"]>([]);
 
   useEffect(() => {
     if (studentId) {
@@ -52,16 +45,15 @@ export default function StudentDetailPage() {
   const fetchStudentData = async () => {
     try {
       setIsLoading(true);
-      const [studentData, coursesData] = await Promise.all([
+      const [studentData, scoresData, coursesData] = await Promise.all([
         studentApi.getById(studentId),
+        scoreApi.getByStudent(studentId),
         courseApi.getAll(),
       ]);
 
       setStudent(studentData);
+      setScores(scoresData);
       setCourses(coursesData);
-      const results = studentData.examResults || [];
-      console.log(`📊 Frontend: ${results.length} sınav sonucu alındı`, results);
-      setExamResults(results);
 
       // Set first course as default if available
       if (coursesData.length > 0 && !selectedCourseId) {
@@ -302,133 +294,23 @@ export default function StudentDetailPage() {
         </CardContent>
       </Card>
 
-      {/* Exam Results from AI Scoring */}
+      {/* Exam Score Table */}
       <Card className="rounded-xl shadow-sm border-2 border-slate-200">
         <CardHeader className="bg-gradient-to-r from-slate-50 to-slate-100 border-b border-slate-200">
-          <CardTitle className="text-xl text-slate-900">Sınav Sonuçları</CardTitle>
+          <CardTitle className="text-xl text-slate-900">Sınav Puanları</CardTitle>
           <CardDescription className="text-sm">
-            AI puanlama ile okunan sınav sonuçları
-            {examResults && examResults.length > 0 && (
+            Bu öğrencinin tüm sınav puanları, sınavlara göre gruplandırılmış olarak gösterilmektedir.
+            {scores.length > 0 && (
               <span className="ml-2 font-medium text-slate-700">
-                ({examResults.length} sınav)
+                ({scores.length} puan kaydı bulundu)
               </span>
             )}
           </CardDescription>
         </CardHeader>
         <CardContent className="p-6">
-          {!examResults || examResults.length === 0 ? (
-            <div className="text-center py-12 text-muted-foreground border-2 border-dashed rounded-lg">
-              <p className="text-lg font-medium">Henüz açıklanmış sınav yok</p>
-              <p className="text-sm mt-2">Sınav sonuçları AI puanlama veya toplu yükleme ile eklendikten sonra burada görünecektir</p>
-            </div>
-          ) : (
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-[150px]">Sınav Kodu</TableHead>
-                      <TableHead className="w-[100px]">Tür</TableHead>
-                      <TableHead className="w-[200px]">Ders</TableHead>
-                      {(() => {
-                        // En fazla soru sayısını bul
-                        const maxQuestions = Math.max(
-                          ...examResults.map(r => {
-                            const sorted = [...(r.questionScores || [])].sort(
-                              (a, b) => a.questionNumber - b.questionNumber
-                            );
-                            return sorted.length > 0 
-                              ? Math.max(...sorted.map(qs => qs.questionNumber))
-                              : 0;
-                          })
-                        );
-                        return Array.from({ length: maxQuestions }, (_, i) => (
-                          <TableHead key={i + 1} className="text-center w-[80px]">
-                            Soru {i + 1}
-                          </TableHead>
-                        ));
-                      })()}
-                      <TableHead className="text-center w-[100px]">Toplam</TableHead>
-                      <TableHead className="text-center w-[100px]">Max</TableHead>
-                      <TableHead className="text-center w-[100px]">Yüzde</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {examResults.map((result, index) => {
-                      // Soru numaralarına göre sırala
-                      const sortedScores = [...(result.questionScores || [])].sort(
-                        (a, b) => a.questionNumber - b.questionNumber
-                      );
-                      const maxQuestionNumber = sortedScores.length > 0 
-                        ? Math.max(...sortedScores.map(qs => qs.questionNumber))
-                        : 0;
-                      
-                      // Tüm sınavlar için en fazla soru sayısını bul
-                      const globalMaxQuestions = Math.max(
-                        ...examResults.map(r => {
-                          const sorted = [...(r.questionScores || [])].sort(
-                            (a, b) => a.questionNumber - b.questionNumber
-                          );
-                          return sorted.length > 0 
-                            ? Math.max(...sorted.map(qs => qs.questionNumber))
-                            : 0;
-                        })
-                      );
-
-                      // Unique key oluştur
-                      const uniqueKey = result._id || `${result.examId || 'exam'}-${result.createdAt || index}`;
-                      console.log(`🔑 Rendering result ${index + 1}: key=${uniqueKey}, examCode=${result.examCode}, examId=${result.examId}`);
-
-                      return (
-                        <TableRow key={uniqueKey}>
-                          <TableCell className="font-medium">
-                            {result.examCode || "Bilinmeyen"}
-                          </TableCell>
-                          <TableCell>
-                            {result.examType && (
-                              <Badge variant={result.examType === "midterm" ? "default" : "secondary"}>
-                                {result.examType === "midterm" ? "Vize" : "Final"}
-                              </Badge>
-                            )}
-                          </TableCell>
-                          <TableCell className="text-sm text-muted-foreground">
-                            {result.courseName || "-"}
-                          </TableCell>
-                          {Array.from({ length: globalMaxQuestions }, (_, i) => {
-                            const qs = sortedScores.find(s => s.questionNumber === i + 1);
-                            return (
-                              <TableCell key={i + 1} className="text-center">
-                                {qs?.score ?? "-"}
-                              </TableCell>
-                            );
-                          })}
-                          <TableCell className="text-center font-semibold">
-                            {result.totalScore ?? 0}
-                          </TableCell>
-                          <TableCell className="text-center text-muted-foreground">
-                            {result.maxTotalScore ?? 0}
-                          </TableCell>
-                          <TableCell className="text-center">
-                            <Badge
-                              variant={
-                                (result.percentage ?? 0) >= 70
-                                  ? "default"
-                                  : (result.percentage ?? 0) >= 50
-                                  ? "secondary"
-                                  : "destructive"
-                              }
-                            >
-                              {result.percentage ?? 0}%
-                            </Badge>
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+          <StudentExamScoreTable scores={scores} />
+        </CardContent>
+      </Card>
 
       {/* Course Selection for Achievements */}
       {courses.length > 0 && (

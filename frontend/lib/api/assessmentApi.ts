@@ -19,18 +19,6 @@ export interface LOAchievement {
   achievedPercentage: number;
 }
 
-// For student-level achievements (used in StudentComparisonChart and HeatmapChart)
-export interface StudentLOAchievement {
-  learningOutcome: {
-    _id: string;
-    code: string;
-    description: string;
-  };
-  achievedPercentage: number;
-  totalScoreEarned: number;
-  totalMaxScore: number;
-}
-
 export interface POAchievement {
   code: string;
   achievedPercentage: number;
@@ -75,17 +63,5 @@ export const getPOAchievement = async (
     `/assessments/course/${courseId}/po-achievement`
   );
   return response.data.data || [];
-};
-
-/**
- * Get student achievements per student for a course
- */
-export const getStudentAchievements = async (
-  courseId: string
-): Promise<Record<string, StudentLOAchievement[]>> => {
-  const response = await apiClient.get(
-    `/assessments/course/${courseId}/student-achievements`
-  );
-  return response.data.data || {};
 };
 

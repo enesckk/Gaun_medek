@@ -7,11 +7,6 @@ frontend/node_modules/
 .env
 .env.local
 .env*.local
-backend/.env
-backend/.env.local
-frontend/.env
-frontend/.env.local
-*.env
 
 # Logs
 *.log
@@ -36,7 +31,6 @@ build/
 out/
 frontend/.next/
 frontend/.env.local
-api/backend/
 
 # Temporary files
 tmp/

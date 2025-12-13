@@ -50,9 +50,6 @@ export interface SubmitScoreResponse {
   markers?: any;
   crops?: Array<{ questionNumber: number; imagePath: string }>;
   scores: Array<{ questionNumber: number; score: number; learningOutcomeCode: string | null }>;
-  totalScore?: number;
-  maxTotalScore?: number;
-  percentage?: number;
   resultId?: string;
 }
 
@@ -122,8 +119,8 @@ export const examApi = {
   },
 
   getByCourse: async (courseId: string): Promise<Exam[]> => {
-    // Ensure courseId is a valid string
-    const id = courseId || '';
+    // Ensure courseId is a string
+    const id = typeof courseId === 'string' ? courseId : courseId?.toString() || String(courseId);
     if (!id || id === '[object Object]' || id === 'undefined' || id === 'null') {
       console.error('Invalid courseId provided to getByCourse:', courseId);
       return [];
@@ -138,8 +135,8 @@ export const examApi = {
   },
 
   getById: async (id: string): Promise<Exam> => {
-    // Ensure id is a valid string
-    const examId = id || '';
+    // Ensure id is a string
+    const examId = typeof id === 'string' ? id : id?.toString() || String(id);
     if (!examId || examId === 'undefined' || examId === 'null' || examId === '[object Object]') {
       console.error('Invalid exam ID provided to getById:', id);
       throw new Error(`Geçersiz sınav ID: ${examId}`);

@@ -1,32 +1,11 @@
 import apiClient from "./apiClient";
 
-export interface ExamResult {
-  _id: string;
-  examId: string;
-  examType?: string;
-  examCode?: string;
-  courseName?: string;
-  courseCode?: string;
-  questionScores: Array<{
-    questionNumber: number;
-    score: number;
-    learningOutcomeCode: string | null;
-  }>;
-  totalScore: number;
-  maxTotalScore: number;
-  percentage: number;
-  createdAt?: string;
-  updatedAt?: string;
-}
-
 export interface Student {
   _id: string;
   studentNumber: string;
   name: string;
   department?: string;
   classLevel?: number;
-  examResults?: ExamResult[];
-  examResultsCount?: number;
   createdAt?: string;
   updatedAt?: string;
 }

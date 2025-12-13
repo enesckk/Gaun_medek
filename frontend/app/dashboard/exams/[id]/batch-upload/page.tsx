@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { examApi, type BatchStatusItem } from "@/lib/api/examApi";
-import { Loader2, UploadCloud, CheckCircle2, XCircle, ArrowLeft } from "lucide-react";
+import { Loader2, UploadCloud, CheckCircle2, XCircle } from "lucide-react";
 
 export default function BatchUploadPage() {
   const params = useParams();
@@ -102,30 +102,14 @@ export default function BatchUploadPage() {
     return Math.round((status.processedCount / status.totalFiles) * 100);
   }, [status]);
 
-  const isProcessing = batchId !== null && status && status.processedCount < status.totalFiles;
-
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Button variant="ghost" size="sm" onClick={() => router.push("/exams")} className="px-2">
-            <ArrowLeft className="h-4 w-4 mr-1" />
-            Geri
-          </Button>
-          <div>
-            <div className="flex items-center gap-3">
-              <h1 className="text-3xl font-bold tracking-tight">Toplu Sınav Yükleme</h1>
-              {isProcessing && (
-                <div className="flex items-center gap-2 px-3 py-1 bg-blue-50 border border-blue-200 rounded-full">
-                  <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
-                  <span className="text-sm font-medium text-blue-700">Hesaplanıyor...</span>
-                </div>
-              )}
-            </div>
-            <p className="text-muted-foreground">
-              10-300 PDF'yi bir kerede yükleyin, AI otomatik puanlasın.
-            </p>
-          </div>
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Toplu Sınav Yükleme</h1>
+          <p className="text-muted-foreground">
+            10-300 PDF’yi bir kerede yükleyin, AI otomatik puanlasın.
+          </p>
         </div>
         <Button variant="outline" onClick={() => router.push(`/dashboard/exams/${examId}/results`)}>
           Değerlendirme Sonuçlarını Görüntüle
@@ -185,33 +169,16 @@ export default function BatchUploadPage() {
       {status && (
         <Card>
           <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle>İlerleme</CardTitle>
-              {isProcessing && (
-                <div className="flex items-center gap-2 text-sm text-blue-600">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  <span className="font-medium">İşlem devam ediyor...</span>
-                </div>
-              )}
-            </div>
+            <CardTitle>İlerleme</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="flex items-center justify-between text-sm">
               <span>Toplam: {status.totalFiles}</span>
-              <span className="flex items-center gap-1">
-                İşlenen: {status.processedCount}
-                {isProcessing && <Loader2 className="h-3 w-3 animate-spin text-blue-600" />}
-              </span>
+              <span>İşlenen: {status.processedCount}</span>
               <span className="text-emerald-600">Başarılı: {status.successCount}</span>
               <span className="text-red-600">Başarısız: {status.failedCount}</span>
             </div>
             <Progress value={progress} />
-            {isProcessing && (
-              <div className="text-center text-sm text-muted-foreground">
-                <Loader2 className="h-4 w-4 animate-spin inline-block mr-2" />
-                PDF'ler işleniyor, lütfen bekleyin...
-              </div>
-            )}
             <div className="overflow-auto max-h-72 border rounded-lg">
               <table className="w-full text-sm">
                 <thead className="bg-slate-50">

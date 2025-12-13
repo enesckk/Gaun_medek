@@ -3,12 +3,12 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Target } from "lucide-react";
 import { type Student } from "@/lib/api/studentApi";
-import { type StudentLOAchievement } from "@/lib/api/assessmentApi";
+import { type LOAchievement } from "@/lib/api/scoreApi";
 
 interface HeatmapChartProps {
   students: Student[];
   learningOutcomes: { _id: string; code: string }[];
-  studentAchievements: Record<string, StudentLOAchievement[]>;
+  studentAchievements: Record<string, LOAchievement[]>;
 }
 
 export function HeatmapChart({

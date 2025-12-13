@@ -168,8 +168,8 @@ export function StudentDetectionCard({
             <span className="text-sm font-medium">Exam</span>
             {exam ? (
               <div>
-                <p className="text-lg font-semibold">{exam.examCode}</p>
-                <p className="text-sm text-muted-foreground capitalize">{exam.examType}</p>
+                <p className="text-lg font-semibold">{exam.title}</p>
+                <p className="text-sm text-muted-foreground capitalize">{exam.type}</p>
               </div>
             ) : (
               <p className="text-sm text-muted-foreground">Exam ID: {examId.substring(0, 8)}...</p>

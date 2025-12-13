@@ -1,7 +1,6 @@
 import apiClient from "./apiClient";
 
 export interface ProgramOutcome {
-  _id?: string;
   code: string;
   description: string;
 }

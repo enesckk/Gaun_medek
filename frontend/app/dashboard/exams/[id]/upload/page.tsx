@@ -1,15 +1,14 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Loader2, CheckCircle2, AlertTriangle, ArrowLeft } from "lucide-react";
+import { Loader2, CheckCircle2, AlertTriangle } from "lucide-react";
 import { examApi } from "@/lib/api/examApi";
 import { courseApi, type Course } from "@/lib/api/courseApi";
 import { type Exam } from "@/lib/api/examApi";
@@ -26,7 +25,6 @@ type StatusStep =
 
 export default function ExamUploadPage() {
   const params = useParams();
-  const router = useRouter();
   const examId = params.id as string;
 
   const [exam, setExam] = useState<Exam | null>(null);
@@ -37,9 +35,6 @@ export default function ExamUploadPage() {
   const [scores, setScores] = useState<
     Array<{ questionNumber: number; score: number; learningOutcomeCode: string | null }>
   >([]);
-  const [totalScore, setTotalScore] = useState<number | null>(null);
-  const [maxTotalScore, setMaxTotalScore] = useState<number | null>(null);
-  const [percentage, setPercentage] = useState<number | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [fallbackMessage, setFallbackMessage] = useState<string | null>(null);
 
@@ -103,9 +98,6 @@ export default function ExamUploadPage() {
       }
       setStatus("save");
       setScores(result?.scores || []);
-      setTotalScore(result?.totalScore ?? null);
-      setMaxTotalScore(result?.maxTotalScore ?? null);
-      setPercentage(result?.percentage ?? null);
       setStatus("done");
       toast.success("AI puanlama tamamlandı");
     } catch (error: any) {
@@ -122,17 +114,11 @@ export default function ExamUploadPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Button variant="ghost" size="sm" onClick={() => router.push("/exams")} className="px-2">
-            <ArrowLeft className="h-4 w-4 mr-1" />
-            Geri
-          </Button>
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">AI Sınav Puanlama</h1>
-            <p className="text-muted-foreground">
-              PDF yükleyin, AI otomatik olarak soruları puanlayıp ÖÇ eşlemesi yapacak.
-            </p>
-          </div>
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">AI Sınav Puanlama</h1>
+          <p className="text-muted-foreground">
+            PDF yükleyin, AI otomatik olarak soruları puanlayıp ÖÇ eşlemesi yapacak.
+          </p>
         </div>
       </div>
 
@@ -205,55 +191,24 @@ export default function ExamUploadPage() {
               Henüz sonuç yok. PDF yükleyip puanlama başlatın.
             </p>
           ) : (
-            <div className="space-y-4">
-              <table className="w-full border text-sm">
-                <thead className="bg-slate-50">
-                  <tr>
-                    <th className="p-2 border">Soru</th>
-                    <th className="p-2 border">ÖÇ</th>
-                    <th className="p-2 border">Skor</th>
+            <table className="w-full border text-sm">
+              <thead className="bg-slate-50">
+                <tr>
+                  <th className="p-2 border">Soru</th>
+                  <th className="p-2 border">ÖÇ</th>
+                  <th className="p-2 border">Skor</th>
+                </tr>
+              </thead>
+              <tbody>
+                {scores.map((s) => (
+                  <tr key={s.questionNumber} className="text-center">
+                    <td className="border p-2">{s.questionNumber}</td>
+                    <td className="border p-2">{s.learningOutcomeCode || "-"}</td>
+                    <td className="border p-2">{s.score}</td>
                   </tr>
-                </thead>
-                <tbody>
-                  {scores.map((s) => (
-                    <tr key={s.questionNumber} className="text-center">
-                      <td className="border p-2">{s.questionNumber}</td>
-                      <td className="border p-2">{s.learningOutcomeCode || "-"}</td>
-                      <td className="border p-2">{s.score}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              
-              {/* Toplam Sonuç */}
-              {(totalScore !== null || maxTotalScore !== null || percentage !== null) && (
-                <div className="mt-4 p-4 bg-gradient-to-r from-slate-50 to-slate-100 rounded-lg border-2 border-slate-200">
-                  <h3 className="font-semibold text-lg mb-3 text-slate-900">Toplam Sonuç</h3>
-                  <div className="grid grid-cols-3 gap-4">
-                    <div className="text-center">
-                      <p className="text-sm text-muted-foreground mb-1">Toplam Puan</p>
-                      <p className="text-2xl font-bold text-slate-900">{totalScore ?? 0}</p>
-                    </div>
-                    <div className="text-center">
-                      <p className="text-sm text-muted-foreground mb-1">Maksimum Puan</p>
-                      <p className="text-2xl font-bold text-slate-700">{maxTotalScore ?? 0}</p>
-                    </div>
-                    <div className="text-center">
-                      <p className="text-sm text-muted-foreground mb-1">Başarı Yüzdesi</p>
-                      <p className={`text-2xl font-bold ${
-                        (percentage ?? 0) >= 70 
-                          ? "text-green-600" 
-                          : (percentage ?? 0) >= 50 
-                          ? "text-yellow-600" 
-                          : "text-red-600"
-                      }`}>
-                        {percentage ?? 0}%
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
+                ))}
+              </tbody>
+            </table>
           )}
         </CardContent>
       </Card>

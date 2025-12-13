@@ -1,0 +1,20 @@
+{
+  "templateSize": {
+    "width": 2480,
+    "height": 3508
+  },
+  "questionScoreBoxes": [
+    { "number": 1, "xPercent": 60.48, "yPercent": 47.04, "wPercent": 14.11, "hPercent": 3.42 },
+    { "number": 2, "xPercent": 60.48, "yPercent": 50.46, "wPercent": 14.11, "hPercent": 3.42 },
+    { "number": 3, "xPercent": 60.48, "yPercent": 53.88, "wPercent": 14.11, "hPercent": 3.42 },
+    { "number": 4, "xPercent": 60.48, "yPercent": 57.30, "wPercent": 14.11, "hPercent": 3.42 },
+    { "number": 5, "xPercent": 60.48, "yPercent": 60.72, "wPercent": 14.11, "hPercent": 3.42 },
+    { "number": 6, "xPercent": 60.48, "yPercent": 64.14, "wPercent": 14.11, "hPercent": 3.42 },
+    { "number": 7, "xPercent": 60.48, "yPercent": 67.56, "wPercent": 14.11, "hPercent": 3.42 },
+    { "number": 8, "xPercent": 60.48, "yPercent": 70.98, "wPercent": 14.11, "hPercent": 3.42 },
+    { "number": 9, "xPercent": 60.48, "yPercent": 74.40, "wPercent": 14.11, "hPercent": 3.42 },
+    { "number": 10, "xPercent": 60.48, "yPercent": 77.82, "wPercent": 14.11, "hPercent": 3.42 }
+  ],
+  "_comment": "Koordinatlar yüzde olarak saklanıyor. xPercent, yPercent görüntü genişliği/yüksekliğinin yüzdesi. wPercent, hPercent de genişlik/yüksekliğin yüzdesi."
+}
+

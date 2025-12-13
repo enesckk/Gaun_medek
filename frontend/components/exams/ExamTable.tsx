@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Edit, Trash2, Upload, FileText, AlertTriangle, Eye, BarChart3 } from "lucide-react";
+import { Edit, Trash2, Upload, FileText, AlertTriangle, Eye } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -64,15 +64,14 @@ export function ExamTable({ exams, courses, onDelete }: ExamTableProps) {
               <TableHead className="w-[100px]">Sınav Kodu</TableHead>
               <TableHead className="w-[80px]">Tür</TableHead>
               <TableHead className="text-center w-[100px]">Soru</TableHead>
-              <TableHead className="text-center w-[100px]">Toplam Puan</TableHead>
+              <TableHead className="text-center w-[100px]">Max Puan</TableHead>
               <TableHead className="text-center w-[220px]">AI Puanlama</TableHead>
               <TableHead className="text-right w-[120px]">İşlemler</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {exams.map((exam, index) => {
-              const courseId: string = typeof exam.courseId === "string" ? exam.courseId : exam.courseId._id;
-              const course = courseId ? (courses[courseId] || (typeof exam.courseId === "object" ? exam.courseId : null)) : null;
+              const course = courses[exam.courseId];
               const questionCount = exam.questions?.length || exam.questionCount || 0;
               
               // Check if all questions have ÖÇ mapping
@@ -128,12 +127,7 @@ export function ExamTable({ exams, courses, onDelete }: ExamTableProps) {
                     </Badge>
                   </TableCell>
                   <TableCell className="text-center">
-                    <span className="text-sm font-medium">
-                      {questionCount * (exam.maxScorePerQuestion || 0)}
-                    </span>
-                    <span className="text-xs text-muted-foreground ml-1">
-                      ({exam.maxScorePerQuestion} × {questionCount})
-                    </span>
+                    <span className="text-sm font-medium">{exam.maxScorePerQuestion}</span>
                   </TableCell>
                   <TableCell className="text-center">
                     <div className="flex flex-col gap-2 items-center">
@@ -142,11 +136,10 @@ export function ExamTable({ exams, courses, onDelete }: ExamTableProps) {
                         size="sm"
                         asChild
                         className="h-9 px-4 text-xs font-semibold bg-[#0a294e] hover:bg-[#0a294e]/90 text-white shadow-sm hover:shadow-md transition-all w-full max-w-[180px]"
-                        title="Tek bir PDF yükleyip AI ile puanlama yapın"
                       >
                         <Link href={`/dashboard/exams/${exam._id}/upload`}>
                           <Upload className="h-3.5 w-3.5 mr-1.5" />
-                          Tek PDF Yükle
+                          AI Puanlama
                         </Link>
                       </Button>
                       <Button
@@ -154,28 +147,16 @@ export function ExamTable({ exams, courses, onDelete }: ExamTableProps) {
                         size="sm"
                         asChild
                         className="h-9 px-4 text-xs font-semibold border-2 hover:bg-slate-50 w-full max-w-[180px]"
-                        title="Birden fazla PDF yükleyip toplu olarak AI ile puanlama yapın"
                       >
                         <Link href={`/dashboard/exams/${exam._id}/batch-upload`}>
                           <FileText className="h-3.5 w-3.5 mr-1.5" />
-                          Toplu PDF Yükle
+                          Toplu Yükleme
                         </Link>
                       </Button>
                     </div>
                   </TableCell>
                   <TableCell className="text-right">
                   <div className="flex justify-end gap-2">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      asChild
-                      className="h-8 w-8"
-                      title="Sınav Sonuçları"
-                    >
-                      <Link href={`/dashboard/exams/${exam._id}/results`}>
-                        <BarChart3 className="h-4 w-4" />
-                      </Link>
-                    </Button>
                     <Button
                       variant="ghost"
                       size="icon"

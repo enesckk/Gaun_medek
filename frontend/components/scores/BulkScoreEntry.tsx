@@ -56,8 +56,7 @@ export function BulkScoreEntry({ examId, onUpdate }: BulkScoreEntryProps) {
       setQuestions(questionsData.sort((a, b) => a.number - b.number));
 
       // Load course and students
-      const courseId = typeof examData.courseId === "string" ? examData.courseId : examData.courseId._id;
-      const courseData = await courseApi.getById(courseId);
+      const courseData = await courseApi.getById(examData.courseId);
       setCourse(courseData);
 
       // Get students from course
@@ -278,8 +277,8 @@ export function BulkScoreEntry({ examId, onUpdate }: BulkScoreEntryProps) {
             <TableBody>
               {students.map((student) => {
                 const studentScores = scores[student._id] || {};
-                const totalScore: number = Object.values(studentScores).reduce(
-                  (sum: number, score) => {
+                const totalScore = Object.values(studentScores).reduce(
+                  (sum, score) => {
                     if (typeof score === "number") {
                       return sum + score;
                     }

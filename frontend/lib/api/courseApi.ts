@@ -75,8 +75,8 @@ export const courseApi = {
   },
 
   getById: async (id: string): Promise<Course> => {
-    // Ensure id is a valid string
-    const courseId = id || '';
+    // Ensure id is a string
+    const courseId = typeof id === 'string' ? id : id?.toString() || String(id);
     if (!courseId || courseId === 'undefined' || courseId === 'null' || courseId === '[object Object]') {
       console.error('Invalid course ID provided to getById:', id);
       throw new Error(`Geçersiz ders ID: ${courseId}`);

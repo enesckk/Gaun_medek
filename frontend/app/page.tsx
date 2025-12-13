@@ -11,7 +11,6 @@ import { examApi } from "@/lib/api/examApi";
 import { studentApi } from "@/lib/api/studentApi";
 import { learningOutcomeApi } from "@/lib/api/learningOutcomeApi";
 import { departmentApi } from "@/lib/api/departmentApi";
-import { programOutcomeApi } from "@/lib/api/programOutcomeApi";
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -46,11 +45,9 @@ export default function DashboardPage() {
       }, 0);
 
       // Calculate total program outcomes from all departments
-      const programOutcomesPromises = departments.map(dept => 
-        programOutcomeApi.getByDepartment(dept._id).catch(() => [])
-      );
-      const allProgramOutcomes = await Promise.all(programOutcomesPromises);
-      const totalPOs = allProgramOutcomes.reduce((sum, pos) => sum + pos.length, 0);
+      const totalPOs = departments.reduce((sum, dept) => {
+        return sum + (dept.programOutcomes?.length || 0);
+      }, 0);
 
       setStats({
         totalCourses: courses.length,

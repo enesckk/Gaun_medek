@@ -109,7 +109,7 @@ export default function TestingPage() {
       }
       
       const exam = exams[0];
-      output.push(`✓ Found exam: ${exam.examCode} (${exam._id.substring(0, 8)}...)`);
+      output.push(`✓ Found exam: ${exam.title} (${exam._id.substring(0, 8)}...)`);
       
       // Get questions for exam
       const questions = await questionApi.getByExam(exam._id);

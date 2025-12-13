@@ -16,6 +16,8 @@ import {
 import {
   programOutcomeApi,
   type ProgramOutcome,
+  type CreateProgramOutcomeDto,
+  type UpdateProgramOutcomeDto,
 } from "@/lib/api/programOutcomeApi";
 
 const programOutcomeSchema = z.object({
@@ -58,15 +60,13 @@ export function ProgramOutcomeForm({
     setIsSubmitting(true);
     try {
       if (mode === "create") {
-        // Note: This form may need departmentId to work properly with the current API
-        // The API requires departmentId for add/update operations
-        toast.error("Program Outcome creation requires department context");
-        console.warn("ProgramOutcomeForm: create mode needs departmentId");
+        await programOutcomeApi.create(data as CreateProgramOutcomeDto);
+        toast.success("Program Outcome saved");
+        router.push("/program-outcomes");
       } else if (mode === "edit" && programOutcomeId) {
-        // Note: This form may need departmentId to work properly with the current API
-        // The API requires departmentId for add/update operations
-        toast.error("Program Outcome update requires department context");
-        console.warn("ProgramOutcomeForm: edit mode needs departmentId");
+        await programOutcomeApi.update(programOutcomeId, data as UpdateProgramOutcomeDto);
+        toast.success("Program Outcome saved");
+        router.push("/program-outcomes");
       }
       onSuccess?.();
     } catch (error: any) {
