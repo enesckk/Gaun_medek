@@ -649,12 +649,32 @@ const submitExamScores = async (req, res) => {
 const getExamResults = async (req, res) => {
   try {
     const { examId } = req.params;
-    const results = await StudentExamResult.find({ examId }).sort({ createdAt: -1 });
+    const results = await StudentExamResult.find({ examId })
+      .populate("examId", "examCode examType")
+      .populate("courseId", "code name")
+      .sort({ createdAt: -1 });
     return res.status(200).json({ success: true, data: results });
   } catch (error) {
     return res.status(500).json({
       success: false,
       message: error.message || "Sınav sonuçları getirilemedi",
+    });
+  }
+};
+
+// Get all exam results for a student by studentNumber
+const getExamResultsByStudent = async (req, res) => {
+  try {
+    const { studentNumber } = req.params;
+    const results = await StudentExamResult.find({ studentNumber })
+      .populate("examId", "examCode examType maxScorePerQuestion")
+      .populate("courseId", "code name")
+      .sort({ createdAt: -1 });
+    return res.status(200).json({ success: true, data: results });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message || "Öğrenci sınav sonuçları getirilemedi",
     });
   }
 };
@@ -668,6 +688,7 @@ export {
   derivePCFromExam,
   submitExamScores,
   getExamResults,
+  getExamResultsByStudent,
   startBatchScore,
   getBatchStatus,
 };

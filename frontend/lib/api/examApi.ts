@@ -195,6 +195,11 @@ export const examApi = {
     return response.data.data || [];
   },
 
+  getExamResultsByStudent: async (studentNumber: string): Promise<any[]> => {
+    const response = await apiClient.get(`/exams/student/${studentNumber}/results`);
+    return response.data.data || [];
+  },
+
   startBatchScore: async (examId: string, files: File[]): Promise<BatchStartResponse> => {
     const formData = new FormData();
     files.forEach((f) => formData.append("files", f));

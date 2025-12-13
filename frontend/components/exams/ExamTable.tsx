@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Edit, Trash2, Upload, FileText, AlertTriangle, Eye } from "lucide-react";
+import { Edit, Trash2, Upload, FileText, AlertTriangle, Eye, BarChart3 } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -142,7 +142,7 @@ export function ExamTable({ exams, courses, onDelete }: ExamTableProps) {
                       >
                         <Link href={`/dashboard/exams/${exam._id}/upload`}>
                           <Upload className="h-3.5 w-3.5 mr-1.5" />
-                          AI Puanlama
+                          Tek PDF Yükleme
                         </Link>
                       </Button>
                       <Button
@@ -165,6 +165,17 @@ export function ExamTable({ exams, courses, onDelete }: ExamTableProps) {
                       size="icon"
                       asChild
                       className="h-8 w-8"
+                      title="Değerlendirme Sonuçları"
+                    >
+                      <Link href={`/dashboard/exams/${exam._id}/results`}>
+                        <BarChart3 className="h-4 w-4" />
+                      </Link>
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      asChild
+                      className="h-8 w-8"
                       title="Detay"
                     >
                       <Link href={`/exams/${exam._id}/view`}>
@@ -176,6 +187,7 @@ export function ExamTable({ exams, courses, onDelete }: ExamTableProps) {
                         size="icon"
                         asChild
                         className="h-8 w-8"
+                        title="Düzenle"
                       >
                         <Link href={`/exams/${exam._id}`}>
                           <Edit className="h-4 w-4" />
@@ -186,6 +198,7 @@ export function ExamTable({ exams, courses, onDelete }: ExamTableProps) {
                         size="icon"
                         onClick={() => handleDeleteClick(exam)}
                         className="h-8 w-8"
+                        title="Sil"
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>

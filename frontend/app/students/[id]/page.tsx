@@ -13,6 +13,7 @@ import { StudentLOAchievementCard } from "@/components/students/StudentLOAchieve
 import { StudentPOAchievementCard } from "@/components/students/StudentPOAchievementCard";
 import { studentApi, type Student } from "@/lib/api/studentApi";
 import { scoreApi, type Score, type LOAchievement, type POAchievement } from "@/lib/api/scoreApi";
+import { examApi } from "@/lib/api/examApi";
 import { courseApi, type Course } from "@/lib/api/courseApi";
 
 export default function StudentDetailPage() {
@@ -24,6 +25,7 @@ export default function StudentDetailPage() {
 
   const [student, setStudent] = useState<Student | null>(null);
   const [scores, setScores] = useState<Score[]>([]);
+  const [examResults, setExamResults] = useState<any[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
   const [selectedCourseId, setSelectedCourseId] = useState<string>("");
   const [loAchievements, setLOAchievements] = useState<LOAchievement[]>([]);
@@ -54,6 +56,17 @@ export default function StudentDetailPage() {
       setStudent(studentData);
       setScores(scoresData);
       setCourses(coursesData);
+
+      // Fetch exam results if student data is available
+      if (studentData?.studentNumber) {
+        try {
+          const resultsData = await examApi.getExamResultsByStudent(studentData.studentNumber);
+          setExamResults(resultsData);
+        } catch (error) {
+          console.error("Failed to load exam results", error);
+          // Don't show error, just log it
+        }
+      }
 
       // Set first course as default if available
       if (coursesData.length > 0 && !selectedCourseId) {
@@ -297,10 +310,15 @@ export default function StudentDetailPage() {
       {/* Exam Score Table */}
       <Card className="rounded-xl shadow-sm border-2 border-slate-200">
         <CardHeader className="bg-gradient-to-r from-slate-50 to-slate-100 border-b border-slate-200">
-          <CardTitle className="text-xl text-slate-900">Sınav Puanları</CardTitle>
+          <CardTitle className="text-xl text-slate-900">Sınav Sonuçları</CardTitle>
           <CardDescription className="text-sm">
-            Bu öğrencinin tüm sınav puanları, sınavlara göre gruplandırılmış olarak gösterilmektedir.
-            {scores.length > 0 && (
+            Bu öğrencinin tüm sınav sonuçları, sınavlara göre gruplandırılmış olarak gösterilmektedir.
+            {examResults.length > 0 && (
+              <span className="ml-2 font-medium text-slate-700">
+                ({examResults.length} sınav sonucu bulundu)
+              </span>
+            )}
+            {examResults.length === 0 && scores.length > 0 && (
               <span className="ml-2 font-medium text-slate-700">
                 ({scores.length} puan kaydı bulundu)
               </span>
@@ -308,7 +326,75 @@ export default function StudentDetailPage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="p-6">
-          <StudentExamScoreTable scores={scores} />
+          {examResults.length > 0 ? (
+            <div className="space-y-4">
+              {examResults.map((result: any) => {
+                const exam = typeof result.examId === 'object' ? result.examId : null;
+                const course = typeof result.courseId === 'object' ? result.courseId : null;
+                const totalScore = result.questionScores?.reduce((sum: number, qs: any) => sum + (qs.score || 0), 0) || 0;
+                const maxScorePerQuestion = exam?.maxScorePerQuestion || 0;
+                const totalMaxScore = result.questionScores?.length * maxScorePerQuestion || 0;
+                const percentage = totalMaxScore > 0 ? Math.round((totalScore / totalMaxScore) * 100) : 0;
+                
+                return (
+                  <div key={result._id} className="border rounded-lg p-4 space-y-3 bg-white">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <div className="flex items-center gap-2 mb-1">
+                          <h3 className="font-semibold text-lg">
+                            {exam?.examCode || "Bilinmeyen Sınav"}
+                          </h3>
+                          <Badge variant={exam?.examType === "midterm" ? "default" : "secondary"} className={exam?.examType === "midterm" ? "bg-[#0a294e]" : ""}>
+                            {exam?.examType === "midterm" ? "Vize" : "Final"}
+                          </Badge>
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                          {course ? `${course.code} - ${course.name}` : "Bilinmeyen Ders"}
+                        </p>
+                        {result.createdAt && (
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {new Date(result.createdAt).toLocaleDateString("tr-TR", {
+                              year: "numeric",
+                              month: "long",
+                              day: "numeric"
+                            })}
+                          </p>
+                        )}
+                      </div>
+                      <div className="text-right">
+                        <p className="text-2xl font-bold text-[#0a294e]">{percentage}%</p>
+                        <p className="text-sm text-muted-foreground">
+                          {totalScore.toFixed(1)} / {totalMaxScore}
+                        </p>
+                      </div>
+                    </div>
+                    
+                    {result.questionScores && result.questionScores.length > 0 && (
+                      <div className="border-t pt-3">
+                        <p className="text-xs font-medium text-muted-foreground mb-2">Soru Puanları:</p>
+                        <div className="grid grid-cols-5 sm:grid-cols-10 gap-2">
+                          {result.questionScores.map((qs: any, idx: number) => {
+                            const qsPercentage = maxScorePerQuestion > 0 ? Math.round((qs.score / maxScorePerQuestion) * 100) : 0;
+                            return (
+                              <div key={idx} className="text-center border rounded p-2 bg-slate-50">
+                                <div className="text-xs text-muted-foreground mb-1">S{qs.questionNumber}</div>
+                                <div className="font-semibold text-lg">{qs.score}</div>
+                                {qs.learningOutcomeCode && (
+                                  <div className="text-xs text-[#0a294e] mt-1 font-medium">{qs.learningOutcomeCode}</div>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <StudentExamScoreTable scores={scores} />
+          )}
         </CardContent>
       </Card>
 
