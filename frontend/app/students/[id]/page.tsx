@@ -1,6 +1,8 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+export const dynamic = 'force-dynamic';
+
+import { useEffect, useState, useMemo, Suspense } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { User, Hash, Building2, GraduationCap, Edit, BookOpen, ExternalLink, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
@@ -15,8 +17,9 @@ import { studentApi, type Student } from "@/lib/api/studentApi";
 import { scoreApi, type Score, type LOAchievement, type POAchievement } from "@/lib/api/scoreApi";
 import { examApi } from "@/lib/api/examApi";
 import { courseApi, type Course } from "@/lib/api/courseApi";
+import { Loader2 } from "lucide-react";
 
-export default function StudentDetailPage() {
+function StudentDetailContent() {
   const params = useParams();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -440,6 +443,18 @@ export default function StudentDetailPage() {
         />
       )}
     </div>
+  );
+}
+
+export default function StudentDetailPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    }>
+      <StudentDetailContent />
+    </Suspense>
   );
 }
 

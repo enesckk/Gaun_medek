@@ -613,6 +613,12 @@ const submitExamScores = async (req, res) => {
       learningOutcomeCode: loMap.get(item.questionNumber) || null,
     }));
 
+    // Calculate total scores
+    const totalScore = mergedScores.reduce((sum, s) => sum + (s.score || 0), 0);
+    const questions = await Question.find({ examId }).sort({ number: 1 });
+    const maxTotalScore = questions.reduce((sum, q) => sum + (q.maxScore || 0), 0);
+    const percentage = maxTotalScore > 0 ? (totalScore / maxTotalScore) * 100 : 0;
+
     // 6) DB kaydet: StudentExamResult
     const resultDoc = await StudentExamResult.create({
       studentNumber,
@@ -634,6 +640,9 @@ const submitExamScores = async (req, res) => {
         })),
         scores: mergedScores,
         resultId: resultDoc._id,
+        totalScore,
+        maxTotalScore,
+        percentage: Math.round(percentage * 100) / 100,
       },
     });
   } catch (error) {

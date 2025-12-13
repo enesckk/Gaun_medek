@@ -7,7 +7,12 @@ export interface Course {
   description?: string;
   department?: string | { _id: string; name: string; code?: string };
   semester?: string;
-  learningOutcomes?: Array<{ code: string; description: string }>;
+  learningOutcomes?: Array<{ 
+    code: string; 
+    description: string;
+    programOutcomes?: string[];
+    relatedProgramOutcomes?: string[];
+  }>;
   learningOutcomesCount?: number;
   midtermExam?: {
     examCode: string;

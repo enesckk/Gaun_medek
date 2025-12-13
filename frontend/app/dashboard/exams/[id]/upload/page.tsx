@@ -1,5 +1,7 @@
 "use client";
 
+export const dynamic = 'force-dynamic';
+
 import { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import { toast } from "sonner";
@@ -35,6 +37,9 @@ export default function ExamUploadPage() {
   const [scores, setScores] = useState<
     Array<{ questionNumber: number; score: number; learningOutcomeCode: string | null }>
   >([]);
+  const [totalScore, setTotalScore] = useState<number | null>(null);
+  const [maxTotalScore, setMaxTotalScore] = useState<number | null>(null);
+  const [percentage, setPercentage] = useState<number | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [fallbackMessage, setFallbackMessage] = useState<string | null>(null);
 
@@ -98,6 +103,9 @@ export default function ExamUploadPage() {
       }
       setStatus("save");
       setScores(result?.scores || []);
+      setTotalScore(result?.totalScore ?? null);
+      setMaxTotalScore(result?.maxTotalScore ?? null);
+      setPercentage(result?.percentage ?? null);
       setStatus("done");
       toast.success("AI puanlama tamamlandı");
     } catch (error: any) {
@@ -185,30 +193,57 @@ export default function ExamUploadPage() {
         <CardHeader>
           <CardTitle>Sonuç Önizleme</CardTitle>
         </CardHeader>
-        <CardContent className="overflow-x-auto">
+        <CardContent className="overflow-x-auto space-y-4">
           {scores.length === 0 ? (
             <p className="text-muted-foreground text-sm">
               Henüz sonuç yok. PDF yükleyip puanlama başlatın.
             </p>
           ) : (
-            <table className="w-full border text-sm">
-              <thead className="bg-slate-50">
-                <tr>
-                  <th className="p-2 border">Soru</th>
-                  <th className="p-2 border">ÖÇ</th>
-                  <th className="p-2 border">Skor</th>
-                </tr>
-              </thead>
-              <tbody>
-                {scores.map((s) => (
-                  <tr key={s.questionNumber} className="text-center">
-                    <td className="border p-2">{s.questionNumber}</td>
-                    <td className="border p-2">{s.learningOutcomeCode || "-"}</td>
-                    <td className="border p-2">{s.score}</td>
+            <>
+              {/* Toplam Puan Bilgisi */}
+              {(totalScore !== null || maxTotalScore !== null || percentage !== null) && (
+                <div className="bg-slate-50 p-4 rounded-lg border-2 border-slate-200">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <p className="text-sm text-muted-foreground mb-1">Toplam Puan</p>
+                      <p className="text-2xl font-bold text-slate-900">
+                        {totalScore !== null ? totalScore.toFixed(1) : '-'} / {maxTotalScore !== null ? maxTotalScore.toFixed(1) : '-'}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground mb-1">Başarı Yüzdesi</p>
+                      <p className="text-2xl font-bold text-slate-900">
+                        {percentage !== null ? `${percentage.toFixed(2)}%` : '-'}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground mb-1">Soru Sayısı</p>
+                      <p className="text-2xl font-bold text-slate-900">{scores.length}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Soru Detayları Tablosu */}
+              <table className="w-full border text-sm">
+                <thead className="bg-slate-50">
+                  <tr>
+                    <th className="p-2 border">Soru</th>
+                    <th className="p-2 border">ÖÇ</th>
+                    <th className="p-2 border">Skor</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {scores.map((s) => (
+                    <tr key={s.questionNumber} className="text-center">
+                      <td className="border p-2">{s.questionNumber}</td>
+                      <td className="border p-2">{s.learningOutcomeCode || "-"}</td>
+                      <td className="border p-2">{s.score}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </>
           )}
         </CardContent>
       </Card>

@@ -1,5 +1,7 @@
 "use client";
 
+export const dynamic = 'force-dynamic';
+
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import {
@@ -81,6 +83,22 @@ export default function CourseReportPage() {
         getPOAchievement(courseId),
       ]);
 
+      console.log('📊 ÖÇ Başarı Verileri:', loData);
+      console.log('📈 PÇ Başarı Verileri:', poData);
+      console.log('📚 Course Learning Outcomes (Raw):', courseData.learningOutcomes);
+      console.log('📚 Course Learning Outcomes (with PÇ mappings):', courseData.learningOutcomes?.map(lo => ({
+        code: lo.code,
+        description: lo.description,
+        programOutcomes: lo.programOutcomes || lo.relatedProgramOutcomes || [],
+        hasProgramOutcomes: !!(lo.programOutcomes || lo.relatedProgramOutcomes)
+      })));
+      
+      // ÖÇ başarı verilerindeki PÇ eşleştirmelerini kontrol et
+      loData.forEach(lo => {
+        const relatedPOs = (lo as any).relatedProgramOutcomes || [];
+        console.log(`🔍 ÖÇ ${lo.code} -> PÇ'ler:`, relatedPOs, relatedPOs.length > 0 ? '✅' : '❌ BOŞ');
+      });
+
       setLOAchievements(loData);
       setPOAchievements(poData);
     } catch (error: any) {
@@ -157,6 +175,7 @@ export default function CourseReportPage() {
       <CourseSummaryCard
         loAchievements={loAchievements}
         poAchievements={poAchievements}
+        course={course}
       />
 
       {/* Course Info Header */}

@@ -1,5 +1,7 @@
 "use client";
 
+export const dynamic = 'force-dynamic';
+
 import { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import { toast } from "sonner";
@@ -78,7 +80,7 @@ export default function ExamResultsPage() {
                 <th className="p-2 border">ÖÇ</th>
                 <th className="p-2 border">Ortalama</th>
                 <th className="p-2 border">Başarı %</th>
-                <th className="p-2 border">Deneme</th>
+                <th className="p-2 border">Cevap Veren</th>
               </tr>
             </thead>
             <tbody>

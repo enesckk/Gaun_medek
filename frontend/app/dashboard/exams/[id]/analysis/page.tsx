@@ -1,5 +1,7 @@
 "use client";
 
+export const dynamic = 'force-dynamic';
+
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import {
@@ -117,7 +119,7 @@ export default function ExamAnalysisPage() {
                 <th className="p-2 border">ÖÇ</th>
                 <th className="p-2 border">Ortalama</th>
                 <th className="p-2 border">Başarı %</th>
-                <th className="p-2 border">Öğrenci</th>
+                <th className="p-2 border">Cevap Veren</th>
               </tr>
             </thead>
             <tbody>

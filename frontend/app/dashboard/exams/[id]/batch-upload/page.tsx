@@ -1,5 +1,7 @@
 "use client";
 
+export const dynamic = 'force-dynamic';
+
 import { useEffect, useMemo, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -165,6 +167,17 @@ export default function BatchUploadPage() {
           </Button>
         </CardContent>
       </Card>
+
+      {batchId && status && status.processedCount < status.totalFiles && (
+        <Card className="border-2 border-blue-200 bg-blue-50">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Loader2 className="h-5 w-5 animate-spin text-blue-600" />
+              <span>Hesaplanıyor...</span>
+            </CardTitle>
+          </CardHeader>
+        </Card>
+      )}
 
       {status && (
         <Card>

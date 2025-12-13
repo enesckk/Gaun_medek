@@ -4,15 +4,18 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { TrendingUp, TrendingDown, Minus } from "lucide-react";
 import { type LOAchievement, type POAchievement } from "@/lib/api/assessmentApi";
+import { type Course } from "@/lib/api/courseApi";
 
 interface CourseSummaryCardProps {
   loAchievements: LOAchievement[];
   poAchievements: POAchievement[];
+  course?: Course | null;
 }
 
 export function CourseSummaryCard({
   loAchievements,
   poAchievements,
+  course,
 }: CourseSummaryCardProps) {
   const calculateAverage = (achievements: Array<{ achievedPercentage: number }>) => {
     if (achievements.length === 0) return 0;
@@ -22,6 +25,20 @@ export function CourseSummaryCard({
     );
     return sum / achievements.length;
   };
+
+  // Calculate total unique PÇ count from Course's learningOutcomes
+  const totalPCCount = course?.learningOutcomes?.reduce((uniquePCs, lo) => {
+    const pcs = lo.programOutcomes || lo.relatedProgramOutcomes || [];
+    pcs.forEach((pc: string) => {
+      if (pc && !uniquePCs.has(pc)) {
+        uniquePCs.add(pc);
+      }
+    });
+    return uniquePCs;
+  }, new Set<string>()).size || 0;
+
+  // Use totalPCCount if poAchievements is empty, otherwise use poAchievements.length
+  const displayPCCount = poAchievements.length > 0 ? poAchievements.length : totalPCCount;
 
   const avgLO = calculateAverage(loAchievements);
   const avgPO = calculateAverage(poAchievements);
@@ -36,8 +53,8 @@ export function CourseSummaryCard({
   const loSuccessRate = loAchievements.length > 0
     ? (loAboveThreshold / loAchievements.length) * 100
     : 0;
-  const poSuccessRate = poAchievements.length > 0
-    ? (poAboveThreshold / poAchievements.length) * 100
+  const poSuccessRate = displayPCCount > 0
+    ? (poAboveThreshold / displayPCCount) * 100
     : 0;
 
   const getStatusColor = (percentage: number) => {
@@ -120,7 +137,7 @@ export function CourseSummaryCard({
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-semibold">Program Çıktıları (PÇ)</h3>
               <Badge variant="outline" className="text-sm">
-                {poAchievements.length} PÇ
+                {displayPCCount} PÇ
               </Badge>
             </div>
             <div className="space-y-3">
@@ -153,7 +170,7 @@ export function CourseSummaryCard({
               </div>
               <div className="pt-2 border-t">
                 <p className="text-sm text-muted-foreground">
-                  <strong>{poAboveThreshold}</strong> / {poAchievements.length} PÇ hedef eşiğini (≥60%) geçti
+                  <strong>{poAboveThreshold}</strong> / {displayPCCount} PÇ hedef eşiğini (≥60%) geçti
                 </p>
                 <p className="text-xs text-muted-foreground mt-1">
                   Başarı oranı: {poSuccessRate.toFixed(1)}%

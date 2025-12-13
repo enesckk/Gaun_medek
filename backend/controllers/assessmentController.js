@@ -135,14 +135,14 @@ export const getLOAchievement = async (req, res) => {
 
     // Initialize with course learning outcomes
     course.learningOutcomes.forEach((lo) => {
-      loMap.set(lo.code, {
-        code: lo.code,
-        description: lo.description,
-        relatedProgramOutcomes: lo.relatedProgramOutcomes || [],
-        totalScoreEarned: 0,
-        totalMaxScore: 0,
-        studentsProcessed: new Set(),
-      });
+    loMap.set(lo.code, {
+      code: lo.code,
+      description: lo.description,
+      relatedProgramOutcomes: lo.programOutcomes || lo.relatedProgramOutcomes || [],
+      totalScoreEarned: 0,
+      totalMaxScore: 0,
+      studentsProcessed: new Set(),
+    });
     });
 
     // Process StudentExamResult (yeni sistem)
@@ -236,8 +236,23 @@ export const getPOAchievement = async (req, res) => {
     // Build PÇ map from ÖÇ achievements
     const poMap = new Map();
 
+    console.log('🔍 PÇ Hesaplama - ÖÇ Başarı Verileri:', JSON.stringify(loAchievements, null, 2));
+
+    console.log('🔍 getPOAchievement - loAchievements count:', loAchievements.length);
+    console.log('🔍 getPOAchievement - loAchievements:', JSON.stringify(loAchievements.map(lo => ({
+      code: lo.code,
+      relatedProgramOutcomes: lo.relatedProgramOutcomes || [],
+      relatedProgramOutcomesLength: (lo.relatedProgramOutcomes || []).length
+    })), null, 2));
+
     loAchievements.forEach((loAchievement) => {
       const relatedPOs = loAchievement.relatedProgramOutcomes || [];
+      
+      console.log(`  📊 ÖÇ ${loAchievement.code} -> PÇ'ler:`, relatedPOs, `(length: ${relatedPOs.length})`);
+      
+      if (relatedPOs.length === 0) {
+        console.warn(`  ⚠️ ÖÇ ${loAchievement.code} için PÇ eşleştirmesi bulunamadı!`);
+      }
       
       relatedPOs.forEach((poCode) => {
         if (!poMap.has(poCode)) {
@@ -255,6 +270,8 @@ export const getPOAchievement = async (req, res) => {
         });
       });
     });
+
+    console.log('📈 Toplam PÇ Sayısı:', poMap.size);
 
     // Calculate average PÇ achievement
     const results = Array.from(poMap.values()).map((poData) => {
@@ -286,7 +303,7 @@ export const getPOAchievement = async (req, res) => {
  * Helper function to get ÖÇ achievement data
  */
 async function getLOAchievementData(courseId) {
-  const course = await Course.findById(courseId);
+  const course = await Course.findById(courseId).lean(); // Use lean() to get plain JavaScript object
   
   if (!course || !course.learningOutcomes || course.learningOutcomes.length === 0) {
     return [];
@@ -310,26 +327,49 @@ async function getLOAchievementData(courseId) {
 
   const loMap = new Map();
 
+  console.log('🔍 getLOAchievementData - Course learningOutcomes count:', course.learningOutcomes?.length || 0);
+  console.log('🔍 getLOAchievementData - Raw learningOutcomes (first 2):', JSON.stringify(course.learningOutcomes?.slice(0, 2).map(lo => ({
+    code: lo.code,
+    programOutcomes: lo.programOutcomes,
+    relatedProgramOutcomes: lo.relatedProgramOutcomes,
+    allFields: Object.keys(lo), // Show all available fields
+    hasProgramOutcomes: !!(lo.programOutcomes || lo.relatedProgramOutcomes)
+  })), null, 2));
+
   course.learningOutcomes.forEach((lo) => {
+    // Try multiple field names in case of different naming conventions
+    const programOutcomes = lo.programOutcomes || lo.relatedProgramOutcomes || lo.mappedProgramOutcomes || [];
+    
+    console.log(`📚 ÖÇ ${lo.code} - PÇ'ler:`, programOutcomes, `(type: ${typeof programOutcomes}, isArray: ${Array.isArray(programOutcomes)}, length: ${programOutcomes?.length || 0})`);
+    console.log(`  📋 ÖÇ ${lo.code} - Available fields:`, Object.keys(lo));
+    
+    if (!programOutcomes || programOutcomes.length === 0) {
+      console.warn(`  ⚠️ ÖÇ ${lo.code} için PÇ eşleştirmesi YOK! Course'ta kayıtlı değil.`);
+      console.warn(`  🔍 ÖÇ ${lo.code} - Raw object:`, JSON.stringify(lo, null, 2));
+    }
+    
+    // Her öğrenci için ayrı hesaplama yapılacak - Map<studentId, {earned, max}>
     loMap.set(lo.code, {
       code: lo.code,
       description: lo.description,
-      relatedProgramOutcomes: lo.relatedProgramOutcomes || [],
-      totalScoreEarned: 0,
-      totalMaxScore: 0,
-      studentCount: 0,
+      relatedProgramOutcomes: Array.isArray(programOutcomes) ? programOutcomes : [],
+      studentScores: new Map(), // studentId -> { earned: number, max: number }
     });
   });
 
+  // Önce her sorunun hangi ÖÇ'lere ait olduğunu ve max score'unu belirle
   questions.forEach((question) => {
     const loCodes = question.mappedLearningOutcomes || [];
     loCodes.forEach((loCode) => {
       if (loMap.has(loCode)) {
-        loMap.get(loCode).totalMaxScore += question.maxScore;
+        // Bu soru bu ÖÇ'ye ait, max score'unu ekleyeceğiz
+        // Ama öğrenci bazında ekleyeceğiz, bu yüzden şimdilik sadece question referansını tutuyoruz
       }
     });
   });
 
+  // Öğrenci bazında hesaplama: Her öğrenci için ÖÇ yüzdesi hesapla, sonra ortalamasını al
+  // Önce her öğrencinin her ÖÇ için puanlarını topla
   scores.forEach((score) => {
     if (!studentIds.includes(score.studentId.toString())) {
       return;
@@ -344,23 +384,34 @@ async function getLOAchievementData(courseId) {
       loCodes.forEach((loCode) => {
         if (loMap.has(loCode)) {
           const loData = loMap.get(loCode);
-          loData.totalScoreEarned += score.scoreValue;
-          if (!loData.studentsProcessed) {
-            loData.studentsProcessed = new Set();
+          const studentId = score.studentId.toString();
+          
+          if (!loData.studentScores.has(studentId)) {
+            loData.studentScores.set(studentId, { earned: 0, max: 0 });
           }
-          loData.studentsProcessed.add(score.studentId.toString());
+          
+          const studentScore = loData.studentScores.get(studentId);
+          studentScore.earned += score.scoreValue;
+          studentScore.max += question.maxScore;
         }
       });
     }
   });
 
+  // Her ÖÇ için: Öğrenci yüzdelerinin ortalamasını hesapla
   return Array.from(loMap.values()).map((loData) => {
-    const studentCount = loData.studentsProcessed?.size || 0;
-    const averageScore = studentCount > 0
-      ? loData.totalScoreEarned / studentCount
-      : 0;
-    const achievedPercentage = loData.totalMaxScore > 0
-      ? (averageScore / loData.totalMaxScore) * 100
+    const studentPercentages = [];
+    
+    loData.studentScores.forEach((studentScore, studentId) => {
+      if (studentScore.max > 0) {
+        const percentage = (studentScore.earned / studentScore.max) * 100;
+        studentPercentages.push(percentage);
+      }
+    });
+
+    // Sınıf ortalaması: Tüm öğrenci yüzdelerinin ortalaması
+    const achievedPercentage = studentPercentages.length > 0
+      ? studentPercentages.reduce((sum, p) => sum + p, 0) / studentPercentages.length
       : 0;
 
     return {

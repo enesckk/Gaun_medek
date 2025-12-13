@@ -51,6 +51,9 @@ export interface SubmitScoreResponse {
   crops?: Array<{ questionNumber: number; imagePath: string }>;
   scores: Array<{ questionNumber: number; score: number; learningOutcomeCode: string | null }>;
   resultId?: string;
+  totalScore?: number;
+  maxTotalScore?: number;
+  percentage?: number;
 }
 
 export interface BatchStartResponse {

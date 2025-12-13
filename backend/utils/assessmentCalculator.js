@@ -32,8 +32,10 @@ export function calculateQuestionAnalysis(studentResults, exam) {
   // Hesapla
   const analysis = Array.from(questionMap.values()).map((item) => {
     const scores = item.scores.map((s) => s.score);
-    const avg = scores.length
-      ? scores.reduce((a, b) => a + b, 0) / scores.length
+    // Sıfır alanları filtrele - sadece puan alanları (score > 0) sayılır
+    const answeredScores = scores.filter(s => s > 0);
+    const avg = answeredScores.length
+      ? answeredScores.reduce((a, b) => a + b, 0) / answeredScores.length
       : 0;
     const success = maxScore > 0 ? (avg / maxScore) * 100 : 0;
     const loCode =
@@ -45,7 +47,7 @@ export function calculateQuestionAnalysis(studentResults, exam) {
       averageScore: Number(avg.toFixed(2)),
       successRate: Number(success.toFixed(2)),
       learningOutcomeCode: loCode,
-      attempts: scores.length,
+      attempts: answeredScores.length, // Sadece cevap verenler (score > 0)
     };
   });
 
