@@ -12,7 +12,12 @@ const allowedOrigins = [
   process.env.FRONTEND_URL,
   'http://localhost:3000',
   'http://localhost:3001',
+  'https://gaun-mudek.vercel.app', // Vercel frontend URL
 ].filter(Boolean);
+
+console.log('🔒 CORS Allowed Origins:', allowedOrigins);
+console.log('🔒 FRONTEND_URL:', process.env.FRONTEND_URL);
+console.log('🔒 NODE_ENV:', process.env.NODE_ENV);
 
 app.use(cors({
   origin: function (origin, callback) {
@@ -21,17 +26,27 @@ app.use(cors({
       return callback(null, true);
     }
     
+    console.log('🌐 CORS Request from origin:', origin);
+    
     // Check if origin is in allowed list
     if (allowedOrigins.includes(origin)) {
+      console.log('✅ CORS Allowed:', origin);
       return callback(null, true);
     }
     
     // Development mode: allow all origins
     if (process.env.NODE_ENV !== 'production') {
+      console.log('✅ CORS Allowed (dev mode):', origin);
       return callback(null, true);
     }
     
-    // Production: only allow specified origins
+    // Production: also allow vercel.app domains as fallback
+    if (origin.includes('vercel.app') || origin.includes('onrender.com')) {
+      console.log('✅ CORS Allowed (vercel/render):', origin);
+      return callback(null, true);
+    }
+    
+    console.log('❌ CORS Blocked:', origin);
     callback(new Error('Not allowed by CORS'));
   },
   credentials: true,
