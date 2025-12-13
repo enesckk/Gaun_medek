@@ -19,6 +19,7 @@ export default function ScoresPage() {
   const [scores, setScores] = useState<Score[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingExams, setIsLoadingExams] = useState(true);
+  const [activeTab, setActiveTab] = useState<string>("bulk");
 
   useEffect(() => {
     fetchExams();
@@ -114,7 +115,7 @@ export default function ScoresPage() {
                 Puanlar yükleniyor...
               </div>
             ) : (
-              <Tabs defaultValue="bulk" className="w-full">
+              <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                 <TabsList className="grid w-full grid-cols-2">
                   <TabsTrigger value="bulk">Toplu Puan Girişi</TabsTrigger>
                   <TabsTrigger value="view">Puan Görüntüleme</TabsTrigger>
