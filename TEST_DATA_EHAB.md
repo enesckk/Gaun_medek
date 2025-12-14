@@ -192,3 +192,4 @@ Frontend'de: **Sınavlar** → **Yeni Sınav Ekle**
 2. **MÜDEK Matrisi**: Ders detay sayfasında "MÜDEK Matrisi" sekmesinden ÖÇ-PÇ eşleştirmesini yapın
 3. **Sınav Puanları**: Test için en az bir öğrenciye sınav puanı girin (tek PDF yükleme veya toplu puan girişi)
 
+

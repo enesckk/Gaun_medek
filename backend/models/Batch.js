@@ -100,3 +100,4 @@ BatchSchema.statics.findActiveBatches = function(examId) {
 };
 
 export default mongoose.model("Batch", BatchSchema);
+

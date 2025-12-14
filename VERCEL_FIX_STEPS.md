@@ -56,3 +56,4 @@ Build süresi **30-60 saniye** arası olmalı (137ms değil!).
 - Root Directory: "frontend" → Frontend klasörü bulunacak
 - Sonuç: Build çalışacak, sayfalar açılacak
 
+

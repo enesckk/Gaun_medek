@@ -1,20 +1,31 @@
 {
   "templateSize": {
-    "width": 2480,
-    "height": 3508
+    "width": 1654,
+    "height": 2339
   },
-  "questionScoreBoxes": [
-    { "number": 1, "xPercent": 60.48, "yPercent": 47.04, "wPercent": 14.11, "hPercent": 3.42 },
-    { "number": 2, "xPercent": 60.48, "yPercent": 50.46, "wPercent": 14.11, "hPercent": 3.42 },
-    { "number": 3, "xPercent": 60.48, "yPercent": 53.88, "wPercent": 14.11, "hPercent": 3.42 },
-    { "number": 4, "xPercent": 60.48, "yPercent": 57.30, "wPercent": 14.11, "hPercent": 3.42 },
-    { "number": 5, "xPercent": 60.48, "yPercent": 60.72, "wPercent": 14.11, "hPercent": 3.42 },
-    { "number": 6, "xPercent": 60.48, "yPercent": 64.14, "wPercent": 14.11, "hPercent": 3.42 },
-    { "number": 7, "xPercent": 60.48, "yPercent": 67.56, "wPercent": 14.11, "hPercent": 3.42 },
-    { "number": 8, "xPercent": 60.48, "yPercent": 70.98, "wPercent": 14.11, "hPercent": 3.42 },
-    { "number": 9, "xPercent": 60.48, "yPercent": 74.40, "wPercent": 14.11, "hPercent": 3.42 },
-    { "number": 10, "xPercent": 60.48, "yPercent": 77.82, "wPercent": 14.11, "hPercent": 3.42 }
+  "studentNumberBoxes": [
+    { "digit": 1, "xPercent": 30.77, "yPercent": 53.87, "wPercent": 3.99, "hPercent": 2.91 },
+    { "digit": 2, "xPercent": 34.99, "yPercent": 53.87, "wPercent": 4.05, "hPercent": 2.91 },
+    { "digit": 3, "xPercent": 39.30, "yPercent": 53.87, "wPercent": 4.05, "hPercent": 2.91 },
+    { "digit": 4, "xPercent": 43.56, "yPercent": 53.87, "wPercent": 4.05, "hPercent": 2.91 },
+    { "digit": 5, "xPercent": 47.88, "yPercent": 53.87, "wPercent": 4.05, "hPercent": 2.91 },
+    { "digit": 6, "xPercent": 52.18, "yPercent": 53.87, "wPercent": 4.05, "hPercent": 2.91 },
+    { "digit": 7, "xPercent": 56.49, "yPercent": 53.87, "wPercent": 4.05, "hPercent": 2.91 },
+    { "digit": 8, "xPercent": 60.76, "yPercent": 53.87, "wPercent": 4.05, "hPercent": 2.91 },
+    { "digit": 9, "xPercent": 65.05, "yPercent": 53.87, "wPercent": 4.05, "hPercent": 2.91 }
   ],
-  "_comment": "Koordinatlar yüzde olarak saklanıyor. xPercent, yPercent görüntü genişliği/yüksekliğinin yüzdesi. wPercent, hPercent de genişlik/yüksekliğin yüzdesi."
+  "questionScoreBoxes": [
+    { "number": 1, "xPercent": 50.48, "yPercent": 67.08, "wPercent": 18.13, "hPercent": 1.58 },
+    { "number": 2, "xPercent": 50.48, "yPercent": 69.13, "wPercent": 18.13, "hPercent": 1.63 },
+    { "number": 3, "xPercent": 50.48, "yPercent": 71.18, "wPercent": 18.13, "hPercent": 1.58 },
+    { "number": 4, "xPercent": 50.48, "yPercent": 73.15, "wPercent": 18.13, "hPercent": 1.58 },
+    { "number": 5, "xPercent": 50.48, "yPercent": 75.20, "wPercent": 18.13, "hPercent": 1.63 },
+    { "number": 6, "xPercent": 50.48, "yPercent": 77.25, "wPercent": 18.13, "hPercent": 1.58 },
+    { "number": 7, "xPercent": 50.48, "yPercent": 79.22, "wPercent": 18.13, "hPercent": 1.58 },
+    { "number": 8, "xPercent": 50.48, "yPercent": 81.27, "wPercent": 18.13, "hPercent": 1.63 },
+    { "number": 9, "xPercent": 50.48, "yPercent": 83.24, "wPercent": 18.13, "hPercent": 1.58 },
+    { "number": 10, "xPercent": 50.48, "yPercent": 85.29, "wPercent": 18.13, "hPercent": 1.63 }
+  ],
+  "_comment": "Koordinatlar yüzde olarak saklanıyor. Orijinal görüntü boyutu: 1654x2339 px. Koordinatlar (left, top, right, bottom) formatından (x, y, w, h) formatına çevrildi. studentNumberBoxes: 9 haneli öğrenci numarası için 9 kutu. questionScoreBoxes: 10 soru için skor kutuları."
 }
 

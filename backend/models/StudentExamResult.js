@@ -23,6 +23,9 @@ const StudentExamResultSchema = new mongoose.Schema(
   }
 );
 
+// Unique constraint: Aynı öğrenci aynı sınavda sadece bir sonuç kaydı olabilir
+StudentExamResultSchema.index({ studentNumber: 1, examId: 1 }, { unique: true });
+
 const StudentExamResult = mongoose.model("StudentExamResult", StudentExamResultSchema);
 
 export default StudentExamResult;

@@ -57,3 +57,4 @@ Vercel Dashboard'da şu environment variables'ları ekleyin:
 - Vercel sadece `api/` klasöründeki dosyaları deploy eder
 - `api/backend/` klasörü Git'e commit edilebilir (veya `.gitignore`'a eklenebilir)
 
+

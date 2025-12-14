@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { examApi, type BatchStatusItem } from "@/lib/api/examApi";
-import { Loader2, UploadCloud, CheckCircle2, XCircle } from "lucide-react";
+import { Loader2, UploadCloud, CheckCircle2, XCircle, ArrowLeft } from "lucide-react";
 
 export default function BatchUploadPage() {
   const params = useParams();
@@ -137,11 +137,21 @@ export default function BatchUploadPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <div>
+        <div className="flex items-center gap-4">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => router.back()}
+            className="h-10 w-10"
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+          <div>
           <h1 className="text-3xl font-bold tracking-tight">Toplu Sınav Yükleme</h1>
           <p className="text-muted-foreground">
             10-300 PDF’yi bir kerede yükleyin, AI otomatik puanlasın.
           </p>
+          </div>
         </div>
         <Button variant="outline" onClick={() => router.push(`/dashboard/exams/${examId}/results`)}>
           Değerlendirme Sonuçlarını Görüntüle

@@ -79,3 +79,4 @@ Build süresi **30-60 saniye** arası olmalı (137ms değil!).
 - Next.js projeleri için otomatik algılama yeterlidir
 - `vercel.json` sadece özel durumlar için gerekir
 
+

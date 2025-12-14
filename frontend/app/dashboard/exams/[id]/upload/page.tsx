@@ -3,14 +3,14 @@
 export const dynamic = 'force-dynamic';
 
 import { useEffect, useMemo, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { Loader2, CheckCircle2, AlertTriangle } from "lucide-react";
+import { Loader2, CheckCircle2, AlertTriangle, ArrowLeft } from "lucide-react";
 import { examApi } from "@/lib/api/examApi";
 import { courseApi, type Course } from "@/lib/api/courseApi";
 import { type Exam } from "@/lib/api/examApi";
@@ -27,6 +27,7 @@ type StatusStep =
 
 export default function ExamUploadPage() {
   const params = useParams();
+  const router = useRouter();
   const examId = params.id as string;
 
   const [exam, setExam] = useState<Exam | null>(null);
@@ -122,11 +123,21 @@ export default function ExamUploadPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">AI Sınav Puanlama</h1>
-          <p className="text-muted-foreground">
-            PDF yükleyin, AI otomatik olarak soruları puanlayıp ÖÇ eşlemesi yapacak.
-          </p>
+        <div className="flex items-center gap-4">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => router.back()}
+            className="h-10 w-10"
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">AI Sınav Puanlama</h1>
+            <p className="text-muted-foreground">
+              PDF yükleyin, AI otomatik olarak soruları puanlayıp ÖÇ eşlemesi yapacak.
+            </p>
+          </div>
         </div>
       </div>
 

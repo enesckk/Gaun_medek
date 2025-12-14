@@ -61,3 +61,4 @@
 - Farklı scaling gereksinimleri varsa
 - `api/` klasörü istemiyorsanız
 
+

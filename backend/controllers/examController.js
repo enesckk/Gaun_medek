@@ -7,6 +7,7 @@ import Course from "../models/Course.js";
 import Score from "../models/Score.js";
 import StudentExamResult from "../models/StudentExamResult.js";
 import Batch from "../models/Batch.js";
+import Question from "../models/Question.js";
 import { pdfToPng } from "../utils/pdfToPng.js";
 import { detectMarkers } from "../utils/markerDetect.js";
 import { warpAndDefineROIs, cropROI } from "../utils/roiCrop.js";
@@ -19,6 +20,10 @@ import {
   extractNumberFromImage,
   extractStudentIdFromImage,
 } from "../utils/geminiVision.js";
+import {
+  calculateOutcomePerformance,
+  calculateProgramOutcomePerformance,
+} from "../utils/assessmentCalculator.js";
 
 // Helper: derive PO contributions from Exam → ÖÇ mapping
 const derivePCFromExam = (exam, course) => {
@@ -48,9 +53,12 @@ const saveTempImage = (buffer, filename) => {
   const tempDir = path.join(process.cwd(), "temp", "exam_crops");
   if (!fs.existsSync(tempDir)) {
     fs.mkdirSync(tempDir, { recursive: true });
+    console.log(`📁 Created temp directory: ${tempDir}`);
   }
   const filePath = path.join(tempDir, filename);
   fs.writeFileSync(filePath, buffer);
+  const fileSize = (buffer.length / 1024).toFixed(2);
+  console.log(`💾 Saved crop image: ${filePath} (${fileSize} KB)`);
   return filePath;
 };
 
@@ -58,46 +66,185 @@ const saveTempImage = (buffer, filename) => {
 const cropQuestionRegions = async (pngBuffer, markers) => {
   // Marker başarıyla bulunmuşsa warp + questionScoreBoxes
   if (markers?.success) {
-    const { warpedImage, questionScoreBoxes } = await warpAndDefineROIs(pngBuffer, markers);
-    const crops = [];
-    for (const box of questionScoreBoxes) {
-      const buf = await cropROI(warpedImage, box);
+    try {
+      const { warpedImage, questionScoreBoxes } = await warpAndDefineROIs(pngBuffer, markers);
+      const crops = [];
+      for (const box of questionScoreBoxes) {
+        const buf = await cropROI(warpedImage, box);
+        const filePath = saveTempImage(buf, `q${box.number}_${Date.now()}.png`);
+        crops.push({
+          questionNumber: box.number,
+          buffer: buf,
+          imagePath: filePath,
+        });
+      }
+      return crops;
+    } catch (warpError) {
+      console.warn("⚠️ Warp failed, falling back to template coordinates:", warpError.message);
+      // Fall through to template fallback below
+    }
+  }
+
+  // Fallback: template koordinatları ile orijinal PNG üzerinden kes
+  // Template'te koordinatlar yüzde olarak saklanıyor, piksel değerlerine çevir
+  const imageMetadata = await sharp(pngBuffer).metadata();
+  const imageWidth = imageMetadata.width || template.templateSize.width;
+  const imageHeight = imageMetadata.height || template.templateSize.height;
+  
+  console.log(`📐 Image dimensions: ${imageWidth}x${imageHeight}`);
+  console.log(`📋 Using template fallback (OpenCV not available or markers not found)`);
+  
+  const fallbackBoxes = template.questionScoreBoxes || [];
+  
+  if (fallbackBoxes.length === 0) {
+    throw new Error("Template'te soru koordinatları bulunamadı.");
+  }
+  
+  const crops = [];
+  
+  for (const box of fallbackBoxes) {
+    // Yüzde değerlerini piksel değerlerine çevir
+    const x = box.x !== undefined ? box.x : Math.round((box.xPercent || 0) * imageWidth / 100);
+    const y = box.y !== undefined ? box.y : Math.round((box.yPercent || 0) * imageHeight / 100);
+    const w = box.w !== undefined ? box.w : Math.round((box.wPercent || 0) * imageWidth / 100);
+    const h = box.h !== undefined ? box.h : Math.round((box.hPercent || 0) * imageHeight / 100);
+    
+    // Koordinatları doğrula
+    if (x === undefined || y === undefined || w === undefined || h === undefined || 
+        isNaN(x) || isNaN(y) || isNaN(w) || isNaN(h) || x < 0 || y < 0 || w <= 0 || h <= 0) {
+      console.error(`⚠️ Invalid coordinates for question ${box.number}:`, { x, y, w, h, box });
+      continue; // Bu soruyu atla
+    }
+    
+    // Koordinatların görüntü sınırları içinde olduğunu kontrol et
+    if (x + w > imageWidth || y + h > imageHeight) {
+      console.warn(`⚠️ Question ${box.number} coordinates exceed image bounds. Adjusting...`);
+      // Sınırları ayarla
+      const adjustedW = Math.min(w, imageWidth - x);
+      const adjustedH = Math.min(h, imageHeight - y);
+      if (adjustedW <= 0 || adjustedH <= 0) {
+        console.error(`❌ Question ${box.number} cannot be cropped (out of bounds)`);
+        continue;
+      }
+      
+      try {
+        const buf = await sharp(pngBuffer)
+          .extract({ left: x, top: y, width: adjustedW, height: adjustedH })
+          .png()
+          .toBuffer();
+        const filePath = saveTempImage(buf, `q${box.number}_${Date.now()}.png`);
+        crops.push({
+          questionNumber: box.number,
+          buffer: buf,
+          imagePath: filePath,
+        });
+        continue;
+      } catch (error) {
+        console.error(`❌ Failed to crop question ${box.number} (adjusted):`, error.message);
+        continue;
+      }
+    }
+    
+    try {
+      const buf = await sharp(pngBuffer)
+        .extract({ left: x, top: y, width: w, height: h })
+        .png()
+        .toBuffer();
       const filePath = saveTempImage(buf, `q${box.number}_${Date.now()}.png`);
       crops.push({
         questionNumber: box.number,
         buffer: buf,
         imagePath: filePath,
       });
+      console.log(`✅ Cropped question ${box.number}: x=${x}, y=${y}, w=${w}, h=${h}`);
+    } catch (error) {
+      console.error(`❌ Failed to crop question ${box.number}:`, error.message);
+      console.error(`   Coordinates: x=${x}, y=${y}, w=${w}, h=${h}`);
+      console.error(`   Image size: ${imageWidth}x${imageHeight}`);
+      // Devam et, diğer soruları işle
     }
-    return crops;
   }
-
-  // Fallback: template koordinatları ile orijinal PNG üzerinden kes
-  const fallbackBoxes = template.questionScoreBoxes || [];
-  const crops = [];
-  for (const box of fallbackBoxes) {
-    const buf = await sharp(pngBuffer)
-      .extract({ left: box.x, top: box.y, width: box.w, height: box.h })
-      .png()
-      .toBuffer();
-    const filePath = saveTempImage(buf, `q${box.number}_${Date.now()}.png`);
-    crops.push({
-      questionNumber: box.number,
-      buffer: buf,
-      imagePath: filePath,
-    });
+  
+  if (crops.length === 0) {
+    throw new Error("Hiçbir soru bölgesi kesilemedi. Template koordinatlarını ve görüntü boyutlarını kontrol edin.");
   }
+  
+  console.log(`✅ Successfully cropped ${crops.length}/${fallbackBoxes.length} questions`);
   return crops;
 };
 
-// Yardımcı: Dosya adından veya OCR'den öğrenci no çıkar
+// Yardımcı: Dosya adından veya template koordinatlarından öğrenci no çıkar
 const extractStudentNumberFromFile = async (fileName, pngBuffer) => {
+  console.log(`🔍 Extracting student number from file: ${fileName || 'unknown'}`);
+  
+  // 1) Önce dosya adından dene
   const regex = /\b(20\d{4,6}|\d{7,12})\b/;
   const nameMatch = fileName ? fileName.match(regex) : null;
-  if (nameMatch) return nameMatch[0];
-  // Fallback: Gemini OCR
+  if (nameMatch) {
+    console.log(`✅ Student number from filename: ${nameMatch[0]}`);
+    return nameMatch[0];
+  }
+  
+  console.log(`⚠️ Student number not found in filename: "${fileName}"`);
+  
+  // 2) Template koordinatlarından öğrenci numarası kutularını kes ve oku
+  try {
+    const studentNumberBoxes = template.studentNumberBoxes || [];
+    if (studentNumberBoxes.length > 0) {
+      const imageMetadata = await sharp(pngBuffer).metadata();
+      const imageWidth = imageMetadata.width || template.templateSize.width;
+      const imageHeight = imageMetadata.height || template.templateSize.height;
+      
+      const digitBoxes = [];
+      for (const box of studentNumberBoxes) {
+        // Yüzde değerlerini piksel değerlerine çevir
+        const x = box.x !== undefined ? box.x : Math.round((box.xPercent || 0) * imageWidth / 100);
+        const y = box.y !== undefined ? box.y : Math.round((box.yPercent || 0) * imageHeight / 100);
+        const w = box.w !== undefined ? box.w : Math.round((box.wPercent || 0) * imageWidth / 100);
+        const h = box.h !== undefined ? box.h : Math.round((box.hPercent || 0) * imageHeight / 100);
+        
+        if (x >= 0 && y >= 0 && w > 0 && h > 0 && x + w <= imageWidth && y + h <= imageHeight) {
+          try {
+            const digitBuffer = await sharp(pngBuffer)
+              .extract({ left: x, top: y, width: w, height: h })
+              .png()
+              .toBuffer();
+            digitBoxes.push(digitBuffer);
+          } catch (error) {
+            console.warn(`⚠️ Failed to crop student number digit ${box.digit}:`, error.message);
+          }
+        }
+      }
+      
+      // Template'te 9 hane var (bazı sınavlarda 9, bazılarında 10 olabilir)
+      const expectedDigits = studentNumberBoxes.length;
+      if (digitBoxes.length === expectedDigits) {
+        // extractStudentNumber fonksiyonunu import et
+        const { extractStudentNumber } = await import("../utils/geminiVision.js");
+        const studentNumber = await extractStudentNumber(digitBoxes);
+        if (studentNumber && studentNumber.length >= 7) {
+          console.log(`✅ Student number from template coordinates (${expectedDigits} digits): ${studentNumber}`);
+          return studentNumber;
+        }
+      } else {
+        console.warn(`⚠️ Could not crop all ${expectedDigits} student number digits (got ${digitBoxes.length})`);
+      }
+    }
+  } catch (error) {
+    console.warn("⚠️ Template-based student number extraction failed:", error.message);
+  }
+  
+  // 3) Son fallback: Tüm sayfadan Gemini OCR
+  console.log("🔄 Trying full-page OCR for student number...");
   const ocrId = await extractStudentIdFromImage(pngBuffer);
-  return ocrId || null;
+  if (ocrId) {
+    console.log(`✅ Student number from full-page OCR: ${ocrId}`);
+    return ocrId;
+  }
+  
+  console.error(`❌ Student number could not be extracted from file: "${fileName}"`);
+  console.error(`   Tried: filename regex, template coordinates (${studentNumberBoxes.length} digits), full-page OCR`);
+  return null;
 };
 
 // Batch durum takibi - MongoDB'de saklanıyor (RAM'de değil)
@@ -459,6 +606,8 @@ const startBatchScore = async (req, res) => {
     });
 
     // Asenkron işleme (fire-and-forget)
+    // Course'u closure'da kullanmak için burada tanımlıyoruz
+    const courseForProcessing = course;
     process.nextTick(async () => {
       const promises = files.map(async (file) => {
         try {
@@ -466,27 +615,50 @@ const startBatchScore = async (req, res) => {
           const { buffer: pngBuffer } = await pdfToPng(file.buffer);
 
           // 2) Öğrenci no
+          console.log(`\n📄 Processing file: ${file.originalname}`);
           const studentNumber = await extractStudentNumberFromFile(file.originalname, pngBuffer);
           if (!studentNumber) {
-            throw new Error("Öğrenci numarası tespit edilemedi");
+            console.error(`❌ [${file.originalname}] Student number extraction failed`);
+            throw new Error(`Öğrenci numarası tespit edilemedi: ${file.originalname}`);
           }
+          console.log(`✅ [${file.originalname}] Student number: ${studentNumber}`);
 
           // 3) Marker
           const markers = await detectMarkers(pngBuffer);
+          console.log(`📸 [Batch ${studentNumber}] Markers success: ${markers?.success || false}`);
 
           // 4) Crop
           const questionCrops = await cropQuestionRegions(pngBuffer, markers);
+          console.log(`✅ [Batch ${studentNumber}] Cropped ${questionCrops.length} question regions`);
+          
+          // Log crop details
+          questionCrops.forEach((crop) => {
+            console.log(`  - Question ${crop.questionNumber}: ${crop.imagePath || 'no path'}`);
+          });
 
           // 5) Gemini skor
+          console.log(`\n📊 [Batch ${studentNumber}] Starting Gemini score extraction for ${questionCrops.length} questions...`);
           const scored = [];
           for (const crop of questionCrops) {
             try {
+              console.log(`\n🔍 [Batch ${studentNumber} - Q${crop.questionNumber}] Calling Gemini API...`);
+              console.log(`   Image path: ${crop.imagePath || 'in-memory'}`);
               const score = await extractNumberFromImage(crop.buffer);
+              console.log(`   ✅ [Batch ${studentNumber} - Q${crop.questionNumber}] Final score: ${score}`);
               scored.push({ questionNumber: crop.questionNumber, score });
             } catch (err) {
+              console.error(`   ❌ [Batch ${studentNumber} - Q${crop.questionNumber}] Score extraction failed:`, err.message);
               scored.push({ questionNumber: crop.questionNumber, score: 0, error: err.message });
             }
           }
+          
+          console.log(`\n📊 [Batch ${studentNumber}] Score Summary:`);
+          console.log(`   Total questions: ${scored.length}`);
+          console.log(`   Non-zero scores: ${scored.filter(s => s.score > 0).length}`);
+          console.log(`   Zero scores: ${scored.filter(s => s.score === 0).length}`);
+          scored.forEach((s) => {
+            console.log(`   Q${s.questionNumber}: ${s.score}${s.error ? ` (error: ${s.error})` : ''}`);
+          });
 
           // 6) ÖÇ eşleştir
           const loMap = new Map(
@@ -498,15 +670,61 @@ const startBatchScore = async (req, res) => {
             learningOutcomeCode: loMap.get(item.questionNumber) || null,
           }));
 
-          // 7) Kaydet
-          await StudentExamResult.create({
-            studentNumber,
-            examId,
-            courseId: exam.courseId,
-            questionScores: mergedScores,
-            outcomePerformance: {},
-            programOutcomePerformance: {},
-          });
+          // 7) ÖÇ ve PÇ performansını hesapla
+          let outcomePerformance = {};
+          let programOutcomePerformance = {};
+          
+          if (courseForProcessing && courseForProcessing.learningOutcomes && courseForProcessing.learningOutcomes.length > 0) {
+            // Tek öğrenci için soru analizi oluştur
+            const questionAnalysis = mergedScores.map((qs) => {
+              const maxScore = exam.maxScorePerQuestion || 0;
+              const success = maxScore > 0 ? (qs.score / maxScore) * 100 : 0;
+              return {
+                questionNumber: qs.questionNumber,
+                maxScore,
+                averageScore: qs.score,
+                successRate: success,
+                learningOutcomeCode: qs.learningOutcomeCode,
+                attempts: 1,
+              };
+            });
+            
+            // ÖÇ performansını hesapla
+            const loPerformance = calculateOutcomePerformance(questionAnalysis, exam, courseForProcessing);
+            outcomePerformance = Object.fromEntries(
+              loPerformance.map((lo) => [lo.code, lo.success])
+            );
+            
+            // PÇ performansını hesapla
+            const poPerformance = calculateProgramOutcomePerformance(loPerformance, courseForProcessing);
+            programOutcomePerformance = Object.fromEntries(
+              poPerformance.map((po) => [po.code, po.success])
+            );
+          }
+
+          // 8) Kaydet veya Güncelle (upsert)
+          // Aynı öğrenci aynı sınavda birden fazla kayıt olmasın - son sonuç geçerli
+          await StudentExamResult.findOneAndUpdate(
+            {
+              studentNumber,
+              examId,
+            },
+            {
+              studentNumber,
+              examId,
+              courseId: exam.courseId,
+              questionScores: mergedScores,
+              outcomePerformance,
+              programOutcomePerformance,
+            },
+            {
+              upsert: true, // Yoksa oluştur, varsa güncelle
+              new: true, // Yeni kaydı döndür
+              setDefaultsOnInsert: true,
+            }
+          );
+          
+          console.log(`✅ Student result saved/updated: ${studentNumber} - Exam: ${examId}`);
 
           // MongoDB'de batch'i güncelle (atomic update)
           await Batch.findOneAndUpdate(
@@ -678,18 +896,38 @@ const submitExamScores = async (req, res) => {
     const markers = await detectMarkers(pngBuffer);
 
     // 3) Crop question regions (warp if markers success, else template fallback)
+    console.log(`📸 Starting crop process... Markers success: ${markers?.success || false}`);
     const questionCrops = await cropQuestionRegions(pngBuffer, markers);
+    console.log(`✅ Cropped ${questionCrops.length} question regions`);
+    
+    // Log crop details
+    questionCrops.forEach((crop) => {
+      console.log(`  - Question ${crop.questionNumber}: ${crop.imagePath || 'no path'}`);
+    });
 
     // 4) Gemini Vision: skor okuma
+    console.log(`\n📊 Starting Gemini score extraction for ${questionCrops.length} questions...`);
     const scored = [];
     for (const crop of questionCrops) {
       try {
+        console.log(`\n🔍 [Question ${crop.questionNumber}] Calling Gemini API...`);
+        console.log(`   Image path: ${crop.imagePath || 'in-memory'}`);
         const score = await extractNumberFromImage(crop.buffer);
+        console.log(`   ✅ [Question ${crop.questionNumber}] Final score: ${score}`);
         scored.push({ questionNumber: crop.questionNumber, score });
       } catch (err) {
+        console.error(`   ❌ [Question ${crop.questionNumber}] Score extraction failed:`, err.message);
         scored.push({ questionNumber: crop.questionNumber, score: 0, error: err.message });
       }
     }
+    
+    console.log(`\n📊 Score Summary:`);
+    console.log(`   Total questions: ${scored.length}`);
+    console.log(`   Non-zero scores: ${scored.filter(s => s.score > 0).length}`);
+    console.log(`   Zero scores: ${scored.filter(s => s.score === 0).length}`);
+    scored.forEach((s) => {
+      console.log(`   Q${s.questionNumber}: ${s.score}${s.error ? ` (error: ${s.error})` : ''}`);
+    });
 
     // 5) Sınav yapısı ile eşleştir (learningOutcomeCode)
     const loMap = new Map(
@@ -703,19 +941,66 @@ const submitExamScores = async (req, res) => {
 
     // Calculate total scores
     const totalScore = mergedScores.reduce((sum, s) => sum + (s.score || 0), 0);
-    const questions = await Question.find({ examId }).sort({ number: 1 });
-    const maxTotalScore = questions.reduce((sum, q) => sum + (q.maxScore || 0), 0);
+    // Use exam.maxScorePerQuestion instead of Question model
+    const maxTotalScore = (exam.questionCount || 0) * (exam.maxScorePerQuestion || 0);
     const percentage = maxTotalScore > 0 ? (totalScore / maxTotalScore) * 100 : 0;
+    
+    console.log(`📊 Total score: ${totalScore}/${maxTotalScore} (${percentage.toFixed(2)}%)`);
+    console.log(`📋 Scores breakdown:`, mergedScores.map(s => `Q${s.questionNumber}:${s.score}`).join(', '));
 
-    // 6) DB kaydet: StudentExamResult
-    const resultDoc = await StudentExamResult.create({
-      studentNumber,
-      examId,
-      courseId: exam.courseId,
-      questionScores: mergedScores,
-      outcomePerformance: {}, // sonraki adımda hesaplanacak
-      programOutcomePerformance: {},
-    });
+    // 6) ÖÇ ve PÇ performansını hesapla
+    let outcomePerformance = {};
+    let programOutcomePerformance = {};
+    
+    if (course && course.learningOutcomes && course.learningOutcomes.length > 0) {
+      // Tek öğrenci için soru analizi oluştur
+      const questionAnalysis = mergedScores.map((qs) => {
+        const maxScore = exam.maxScorePerQuestion || 0;
+        const success = maxScore > 0 ? (qs.score / maxScore) * 100 : 0;
+        return {
+          questionNumber: qs.questionNumber,
+          maxScore,
+          averageScore: qs.score,
+          successRate: success,
+          learningOutcomeCode: qs.learningOutcomeCode,
+          attempts: 1,
+        };
+      });
+      
+      // ÖÇ performansını hesapla
+      const loPerformance = calculateOutcomePerformance(questionAnalysis, exam, course);
+      outcomePerformance = Object.fromEntries(
+        loPerformance.map((lo) => [lo.code, lo.success])
+      );
+      
+      // PÇ performansını hesapla
+      const poPerformance = calculateProgramOutcomePerformance(loPerformance, course);
+      programOutcomePerformance = Object.fromEntries(
+        poPerformance.map((po) => [po.code, po.success])
+      );
+    }
+
+    // 7) DB kaydet veya güncelle: StudentExamResult (upsert)
+    // Aynı öğrenci aynı sınavda birden fazla kayıt olmasın - son sonuç geçerli
+    const resultDoc = await StudentExamResult.findOneAndUpdate(
+      {
+        studentNumber,
+        examId,
+      },
+      {
+        studentNumber,
+        examId,
+        courseId: exam.courseId,
+        questionScores: mergedScores,
+        outcomePerformance,
+        programOutcomePerformance,
+      },
+      {
+        upsert: true, // Yoksa oluştur, varsa güncelle
+        new: true, // Yeni kaydı döndür
+        setDefaultsOnInsert: true,
+      }
+    );
 
     return res.status(201).json({
       success: true,
