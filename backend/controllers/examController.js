@@ -6,6 +6,7 @@ import Exam from "../models/Exam.js";
 import Course from "../models/Course.js";
 import Score from "../models/Score.js";
 import StudentExamResult from "../models/StudentExamResult.js";
+import Batch from "../models/Batch.js";
 import { pdfToPng } from "../utils/pdfToPng.js";
 import { detectMarkers } from "../utils/markerDetect.js";
 import { warpAndDefineROIs, cropROI } from "../utils/roiCrop.js";
@@ -99,8 +100,8 @@ const extractStudentNumberFromFile = async (fileName, pngBuffer) => {
   return ocrId || null;
 };
 
-// Batch durum takibi (hafıza içi)
-const batchStatuses = new Map();
+// Batch durum takibi - MongoDB'de saklanıyor (RAM'de değil)
+// Eski Map kodu kaldırıldı - artık MongoDB kullanıyoruz
 
 // Create a new Exam (MÜDEK uyumlu)
 const createExam = async (req, res) => {
@@ -442,19 +443,23 @@ const startBatchScore = async (req, res) => {
     }
 
     const batchId = `batch_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-    batchStatuses.set(batchId, {
+    
+    // MongoDB'ye batch kaydı oluştur
+    const batch = await Batch.create({
       batchId,
+      examId,
+      courseId: exam.courseId,
       totalFiles: files.length,
       processedCount: 0,
       successCount: 0,
       failedCount: 0,
       startedAt: new Date(),
       statuses: [],
+      isComplete: false,
     });
 
     // Asenkron işleme (fire-and-forget)
     process.nextTick(async () => {
-      const status = batchStatuses.get(batchId);
       const promises = files.map(async (file) => {
         try {
           // 1) PDF -> PNG
@@ -503,26 +508,60 @@ const startBatchScore = async (req, res) => {
             programOutcomePerformance: {},
           });
 
-          status.successCount += 1;
-          status.statuses.push({
-            studentNumber,
-            status: "success",
-            message: markers?.success ? "markers" : "template",
-          });
+          // MongoDB'de batch'i güncelle (atomic update)
+          await Batch.findOneAndUpdate(
+            { batchId },
+            {
+              $inc: { 
+                processedCount: 1,
+                successCount: 1 
+              },
+              $push: {
+                statuses: {
+                  studentNumber,
+                  status: "success",
+                  message: markers?.success ? "markers" : "template",
+                }
+              }
+            },
+            { new: true }
+          );
         } catch (error) {
-          status.failedCount += 1;
-          status.statuses.push({
-            studentNumber: null,
-            status: "failed",
-            message: error.message || "İşlenemedi",
-          });
-        } finally {
-          status.processedCount += 1;
-          batchStatuses.set(batchId, status);
+          // MongoDB'de batch'i güncelle (hata durumu)
+          await Batch.findOneAndUpdate(
+            { batchId },
+            {
+              $inc: { 
+                processedCount: 1,
+                failedCount: 1 
+              },
+              $push: {
+                statuses: {
+                  studentNumber: null,
+                  status: "failed",
+                  message: error.message || "İşlenemedi",
+                }
+              }
+            },
+            { new: true }
+          );
         }
       });
 
+      // Tüm dosyalar işlendikten sonra batch'i tamamla olarak işaretle
       await Promise.allSettled(promises);
+      
+      // Batch tamamlandı mı kontrol et ve güncelle
+      const finalBatch = await Batch.findOne({ batchId });
+      if (finalBatch && finalBatch.processedCount >= finalBatch.totalFiles) {
+        await Batch.findOneAndUpdate(
+          { batchId },
+          {
+            isComplete: true,
+            completedAt: new Date(),
+          }
+        );
+      }
     });
 
     return res.status(202).json({
@@ -543,12 +582,61 @@ const startBatchScore = async (req, res) => {
 
 // Batch durum
 const getBatchStatus = async (req, res) => {
-  const { batchId } = req.query;
-  const status = batchStatuses.get(batchId);
-  if (!status) {
-    return res.status(404).json({ success: false, message: "Batch bulunamadı" });
+  try {
+    const { examId } = req.params;
+    const { batchId } = req.query;
+    
+    // Validate examId
+    if (!examId || examId === 'undefined' || examId === 'null') {
+      return res.status(400).json({ 
+        success: false, 
+        message: "Geçersiz examId" 
+      });
+    }
+    
+    // Validate batchId
+    if (!batchId) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "batchId query parameter is required" 
+      });
+    }
+    
+    // MongoDB'den batch durumunu al
+    const batch = await Batch.findOne({ batchId, examId });
+    if (!batch) {
+      return res.status(404).json({ 
+        success: false, 
+        message: "Batch bulunamadı",
+        batchId,
+        hint: "Batch ID'yi kontrol edin veya yeni bir batch başlatın."
+      });
+    }
+    
+    // Return status
+    return res.status(200).json({ 
+      success: true, 
+      data: {
+        batchId: batch.batchId,
+        totalFiles: batch.totalFiles,
+        processedCount: batch.processedCount,
+        successCount: batch.successCount,
+        failedCount: batch.failedCount,
+        startedAt: batch.startedAt,
+        completedAt: batch.completedAt,
+        statuses: batch.statuses || [],
+        isComplete: batch.isComplete || batch.processedCount >= batch.totalFiles
+      }
+    });
+  } catch (error) {
+    console.error(`[getBatchStatus] Unexpected error:`, error);
+    // Ensure we always send a response, even on error
+    return res.status(500).json({ 
+      success: false, 
+      message: error.message || "Batch status alınamadı",
+      error: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
   }
-  return res.status(200).json({ success: true, data: status });
 };
 
 // Submit scores via AI pipeline (PDF -> PNG -> Marker -> Crop -> Gemini)

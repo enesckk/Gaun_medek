@@ -25,20 +25,21 @@ router.post("/", createExam);
 // GET /api/exams/course/:courseId - Spesifik route, :id'den önce
 router.get("/course/:courseId", getExamsByCourse);
 
-// Score submission (PDF upload or base64) - Spesifik route, :id'den önce
-router.post("/:examId/score", upload.single("file"), submitExamScores);
-// Batch score (multiple PDFs) - Spesifik route, :id'den önce
-router.post("/:examId/batch-score", upload.array("files"), startBatchScore);
-router.get("/:examId/batch-status", getBatchStatus);
-
-// Results list - Spesifik route, :id'den önce
-router.get("/:examId/results", getExamResults);
-// Get exam results by student number - Spesifik route, :id'den önce
+// Get exam results by student number - MUST be before /:examId routes
 router.get("/student/:studentNumber/results", getExamResultsByStudent);
-// Analysis (MÜDEK) - Spesifik route, :id'den önce
+
+// Score submission (PDF upload or base64) - POST routes
+router.post("/:examId/score", upload.single("file"), submitExamScores);
+// Batch score (multiple PDFs) - POST routes
+router.post("/:examId/batch-score", upload.array("files"), startBatchScore);
+
+// GET routes with sub-paths - MUST be before /:id route to avoid conflict
+// These are more specific than /:id, so they must come first
+router.get("/:examId/batch-status", getBatchStatus);
+router.get("/:examId/results", getExamResults);
 router.get("/:id/analysis", getExamAnalysis);
 
-// GET /api/exams/:id - Genel route en sonda
+// GET /api/exams/:id - Genel route en sonda (least specific)
 router.get("/:id", getExamById);
 
 // PUT /api/exams/:id

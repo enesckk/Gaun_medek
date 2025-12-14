@@ -26,14 +26,21 @@ export default function BatchUploadPage() {
     failedCount: number;
     statuses: BatchStatusItem[];
   } | null>(null);
+  const [consecutiveErrors, setConsecutiveErrors] = useState(0);
+  const [isPolling, setIsPolling] = useState(false);
 
   const fetchStatus = useCallback(async () => {
     if (!batchId) return;
+    
     try {
       const data = await examApi.getBatchStatus(examId, batchId);
       if (!data) {
         throw new Error("Batch durumu alınamadı");
       }
+      
+      // Reset error counter on success
+      setConsecutiveErrors(0);
+      
       setStatus({
         totalFiles: data.totalFiles,
         processedCount: data.processedCount,
@@ -41,28 +48,49 @@ export default function BatchUploadPage() {
         failedCount: data.failedCount,
         statuses: data.statuses || [],
       });
+      
       if (data.processedCount >= data.totalFiles) {
         toast.success(`Batch puanlama tamamlandı: ${data.successCount} başarılı, ${data.failedCount} başarısız`);
+        setIsPolling(false);
         // stop polling
-        setTimeout(() => setBatchId(null), 2000);
+        setTimeout(() => {
+          setBatchId(null);
+          setConsecutiveErrors(0);
+        }, 2000);
       }
     } catch (error: any) {
       console.error("Batch status fetch error:", error);
-      const errorMessage = error?.response?.data?.message || error?.message || "Batch durumu okunamadı";
-      toast.error(errorMessage);
+      
+      const newErrorCount = consecutiveErrors + 1;
+      setConsecutiveErrors(newErrorCount);
+      
+      // Stop polling after 3 consecutive errors (likely backend is down)
+      if (newErrorCount >= 3) {
+        setIsPolling(false);
+        const errorMessage = error?.response?.data?.message || error?.message || "Batch durumu okunamadı";
+        toast.error(`${errorMessage} (3 başarısız deneme - polling durduruldu)`);
+        toast.info("Backend sunucusu çalışmıyor olabilir. Lütfen kontrol edin ve sayfayı yenileyin.");
+        return;
+      }
+      
+      // Show error only on first failure, not on every retry
+      if (newErrorCount === 1) {
+        const errorMessage = error?.response?.data?.message || error?.message || "Batch durumu okunamadı";
+        toast.error(errorMessage);
+      }
     }
-  }, [batchId, examId]);
+  }, [batchId, examId, consecutiveErrors]);
 
   useEffect(() => {
     let interval: NodeJS.Timeout | null = null;
-    if (batchId) {
+    if (batchId && isPolling) {
       fetchStatus(); // İlk çağrıyı hemen yap
-      interval = setInterval(fetchStatus, 2500);
+      interval = setInterval(fetchStatus, 3000); // 3 saniyede bir (daha az agresif)
     }
     return () => {
       if (interval) clearInterval(interval);
     };
-  }, [batchId, fetchStatus]);
+  }, [batchId, fetchStatus, isPolling]);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const selected = Array.from(event.target.files || []);
@@ -81,6 +109,8 @@ export default function BatchUploadPage() {
         throw new Error("Batch ID alınamadı");
       }
       setBatchId(data.batchId);
+      setConsecutiveErrors(0);
+      setIsPolling(true);
       setStatus({
         totalFiles: data.totalFiles,
         processedCount: 0,

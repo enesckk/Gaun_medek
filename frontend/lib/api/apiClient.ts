@@ -35,6 +35,7 @@ const baseAPIURL = getAPIURL();
 
 export const apiClient = axios.create({
   baseURL: baseAPIURL,
+  timeout: 30000, // 30 seconds timeout
   headers: {
     "Content-Type": "application/json",
   },
@@ -72,15 +73,42 @@ apiClient.interceptors.response.use(
     return response;
   },
   (error) => {
-    // Handle network errors (backend not running)
-    if (error.code === "ERR_NETWORK" || error.message === "Network Error") {
+    // Handle network errors (backend not running, CORS, timeout)
+    if (
+      error.code === "ERR_NETWORK" || 
+      error.message === "Network Error" ||
+      error.code === "ECONNABORTED" ||
+      error.code === "ERR_FAILED"
+    ) {
       const errorMessage = "Backend sunucusuna bağlanılamıyor. Lütfen backend'in çalıştığından emin olun.";
-      console.error("Network Error:", errorMessage);
+      console.error("Network Error:", errorMessage, error);
       // Create a custom error with user-friendly message
       const networkError = new Error(errorMessage);
       (networkError as any).isNetworkError = true;
+      (networkError as any).isRetryable = true;
       (networkError as any).originalError = error;
       return Promise.reject(networkError);
+    }
+
+    // Handle 502 Bad Gateway - backend is down or crashed
+    if (error.response?.status === 502) {
+      const errorMessage = "Backend sunucusu geçici olarak kullanılamıyor. Lütfen birkaç saniye sonra tekrar deneyin.";
+      console.error("502 Bad Gateway:", errorMessage);
+      const gatewayError = new Error(errorMessage);
+      (gatewayError as any).isGatewayError = true;
+      (gatewayError as any).isRetryable = true;
+      (gatewayError as any).originalError = error;
+      return Promise.reject(gatewayError);
+    }
+
+    // Handle CORS errors
+    if (error.response?.status === 403 && error.response?.data?.message?.includes('CORS')) {
+      const errorMessage = "CORS hatası: Backend yapılandırmasını kontrol edin.";
+      console.error("CORS Error:", errorMessage);
+      const corsError = new Error(errorMessage);
+      (corsError as any).isCORSError = true;
+      (corsError as any).originalError = error;
+      return Promise.reject(corsError);
     }
 
     // Handle common HTTP errors
