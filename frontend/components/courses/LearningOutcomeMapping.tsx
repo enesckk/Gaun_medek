@@ -529,7 +529,7 @@ export function LearningOutcomeMapping({
                             variant="outline"
                             size="sm"
                             onClick={() => {
-                              selectedPOs.forEach(poCode => {
+                              selectedPOs.forEach((poCode: string) => {
                                 toggleProgramOutcome(originalIndex, poCode);
                               });
                             }}
