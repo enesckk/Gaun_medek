@@ -15,13 +15,13 @@ export function StudentLOAchievementCard({
 }: StudentLOAchievementCardProps) {
   const getAchievementColor = (percentage: number) => {
     if (percentage >= 80) return "text-green-600";
-    if (percentage >= 60) return "text-yellow-600";
+    if (percentage >= 50) return "text-yellow-600"; // 50 puan eşiği
     return "text-red-600";
   };
 
   const getAchievementBgColor = (percentage: number) => {
     if (percentage >= 80) return "bg-green-50 border-green-200";
-    if (percentage >= 60) return "bg-yellow-50 border-yellow-200";
+    if (percentage >= 50) return "bg-yellow-50 border-yellow-200"; // 50 puan eşiği
     return "bg-red-50 border-red-200";
   };
 
@@ -76,7 +76,7 @@ export function StudentLOAchievementCard({
                       className={`h-2 rounded-full ${
                         percentage >= 80
                           ? "bg-green-500"
-                          : percentage >= 60
+                          : percentage >= 50 // 50 puan eşiği
                           ? "bg-yellow-500"
                           : "bg-red-500"
                       }`}

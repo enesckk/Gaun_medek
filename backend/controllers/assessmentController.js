@@ -139,13 +139,12 @@ export const getLOAchievement = async (req, res) => {
       code: lo.code,
       description: lo.description,
       relatedProgramOutcomes: lo.programOutcomes || lo.relatedProgramOutcomes || [],
-      totalScoreEarned: 0,
-      totalMaxScore: 0,
+      totalPercentageSum: 0, // Yüzde toplamı (ortalama hesaplamak için)
       studentsProcessed: new Set(),
     });
     });
 
-    // Process StudentExamResult (yeni sistem)
+    // Process StudentExamResult (yeni sistem - genel puan bazlı)
     studentResults.forEach((result) => {
       // Sadece bu derse kayıtlı öğrencileri işle
       if (!studentNumberSet.has(result.studentNumber)) {
@@ -155,32 +154,66 @@ export const getLOAchievement = async (req, res) => {
       const exam = exams.find(e => e._id.toString() === result.examId.toString());
       if (!exam) return;
 
-      // Process each question score
-      (result.questionScores || []).forEach((qs) => {
-        const loCode = qs.learningOutcomeCode;
-        if (loCode && loMap.has(loCode)) {
-          const loData = loMap.get(loCode);
-          loData.totalScoreEarned += qs.score || 0;
-          loData.totalMaxScore += exam.maxScorePerQuestion || 0;
-          loData.studentsProcessed.add(result.studentNumber);
+      // Artık questionScores yok, outcomePerformance kullanılıyor
+      // outcomePerformance: { "ÖÇ1": 75.5, "ÖÇ2": 82.3, ... } formatında
+      if (result.outcomePerformance && typeof result.outcomePerformance === 'object' && Object.keys(result.outcomePerformance).length > 0) {
+        Object.entries(result.outcomePerformance).forEach(([loCode, successPercentage]) => {
+          if (loCode && loMap.has(loCode)) {
+            const loData = loMap.get(loCode);
+            // successPercentage zaten yüzde olarak geliyor (0-100 arası)
+            // Ortalama hesaplamak için toplam yüzdeyi toplayıp öğrenci sayısına böleceğiz
+            if (!loData.totalPercentageSum) {
+              loData.totalPercentageSum = 0;
+            }
+            loData.totalPercentageSum += Number(successPercentage) || 0;
+            loData.studentsProcessed.add(result.studentNumber);
+          }
+        });
+      } else {
+        // Eğer outcomePerformance yoksa veya boşsa, exam'ın questions array'ine bak
+        // ve genel puan yüzdesini eşlenen ÖÇ'lere uygula
+        const examQuestions = exam.questions || [];
+        const mappedLOCodes = new Set();
+        examQuestions.forEach((q) => {
+          if (q.learningOutcomeCode && q.learningOutcomeCode.trim() !== "") {
+            mappedLOCodes.add(q.learningOutcomeCode);
+          }
+        });
+        
+        const percentage = result.percentage || 0;
+        
+        // Eğer sınavda ÖÇ eşlemesi varsa sadece onları kullan
+        if (mappedLOCodes.size > 0) {
+          mappedLOCodes.forEach((loCode) => {
+            if (loMap.has(loCode)) {
+              const loData = loMap.get(loCode);
+              if (!loData.totalPercentageSum) {
+                loData.totalPercentageSum = 0;
+              }
+              loData.totalPercentageSum += percentage;
+              loData.studentsProcessed.add(result.studentNumber);
+            }
+          });
+        } else {
+          // Eşleme yoksa tüm ÖÇ'lere genel puan yüzdesini uygula
+          course.learningOutcomes.forEach((lo) => {
+            const loData = loMap.get(lo.code);
+            if (!loData.totalPercentageSum) {
+              loData.totalPercentageSum = 0;
+            }
+            loData.totalPercentageSum += percentage;
+            loData.studentsProcessed.add(result.studentNumber);
+          });
         }
-      });
+      }
     });
 
     // Calculate achievement percentages
     const results = Array.from(loMap.values()).map((loData) => {
       const studentCount = loData.studentsProcessed?.size || 0;
-      // Ortalama skor: toplam kazanılan puan / öğrenci sayısı
-      const averageScore = studentCount > 0
-        ? loData.totalScoreEarned / studentCount
-        : 0;
-      // Başarı yüzdesi: ortalama skor / maksimum skor * 100
-      // Ancak totalMaxScore her öğrenci için toplanmış olabilir, bu yüzden düzeltme yapalım
-      const avgMaxScore = studentCount > 0
-        ? loData.totalMaxScore / studentCount
-        : 0;
-      const achievedPercentage = avgMaxScore > 0
-        ? (averageScore / avgMaxScore) * 100
+      // Ortalama başarı yüzdesi: toplam yüzde / öğrenci sayısı
+      const achievedPercentage = studentCount > 0
+        ? (loData.totalPercentageSum || 0) / studentCount
         : 0;
 
       return {
@@ -188,8 +221,8 @@ export const getLOAchievement = async (req, res) => {
         description: loData.description,
         relatedProgramOutcomes: loData.relatedProgramOutcomes,
         studentCount,
-        averageScore: Math.round(averageScore * 100) / 100,
-        totalMaxScore: Math.round(avgMaxScore * 100) / 100,
+        averageScore: Math.round(achievedPercentage * 100) / 100, // Yüzde olarak aynı değer
+        totalMaxScore: 100, // Maksimum yüzde 100
         achievedPercentage: Math.round(achievedPercentage * 100) / 100,
       };
     });
@@ -247,20 +280,19 @@ export const getPOAchievement = async (req, res) => {
 
     // Calculate ÖÇ performance (same as getLOAchievement)
     const loMap = new Map();
-
+    
     // Initialize with course learning outcomes
     course.learningOutcomes.forEach((lo) => {
       loMap.set(lo.code, {
         code: lo.code,
         description: lo.description,
         relatedProgramOutcomes: lo.programOutcomes || lo.relatedProgramOutcomes || [],
-        totalScoreEarned: 0,
-        totalMaxScore: 0,
+        totalPercentageSum: 0, // Yüzde toplamı (ortalama hesaplamak için)
         studentsProcessed: new Set(),
       });
     });
 
-    // Process StudentExamResult (yeni sistem)
+    // Process StudentExamResult (yeni sistem - genel puan bazlı)
     studentResults.forEach((result) => {
       // Sadece bu derse kayıtlı öğrencileri işle
       if (!studentNumberSet.has(result.studentNumber)) {
@@ -270,29 +302,30 @@ export const getPOAchievement = async (req, res) => {
       const exam = exams.find(e => e._id.toString() === result.examId.toString());
       if (!exam) return;
 
-      // Process each question score
-      (result.questionScores || []).forEach((qs) => {
-        const loCode = qs.learningOutcomeCode;
-        if (loCode && loMap.has(loCode)) {
-          const loData = loMap.get(loCode);
-          loData.totalScoreEarned += qs.score || 0;
-          loData.totalMaxScore += exam.maxScorePerQuestion || 0;
-          loData.studentsProcessed.add(result.studentNumber);
-        }
-      });
+      // Artık questionScores yok, outcomePerformance kullanılıyor
+      // outcomePerformance: { "ÖÇ1": 75.5, "ÖÇ2": 82.3, ... } formatında
+      if (result.outcomePerformance && typeof result.outcomePerformance === 'object') {
+        Object.entries(result.outcomePerformance).forEach(([loCode, successPercentage]) => {
+          if (loCode && loMap.has(loCode)) {
+            const loData = loMap.get(loCode);
+            // successPercentage zaten yüzde olarak geliyor (0-100 arası)
+            // Ortalama hesaplamak için toplam yüzdeyi toplayıp öğrenci sayısına böleceğiz
+            if (!loData.totalPercentageSum) {
+              loData.totalPercentageSum = 0;
+            }
+            loData.totalPercentageSum += Number(successPercentage) || 0;
+            loData.studentsProcessed.add(result.studentNumber);
+          }
+        });
+      }
     });
 
     // Calculate ÖÇ achievement percentages
     const loAchievements = Array.from(loMap.values()).map((loData) => {
       const studentCount = loData.studentsProcessed?.size || 0;
-      const averageScore = studentCount > 0
-        ? loData.totalScoreEarned / studentCount
-        : 0;
-      const avgMaxScore = studentCount > 0
-        ? loData.totalMaxScore / studentCount
-        : 0;
-      const achievedPercentage = avgMaxScore > 0
-        ? (averageScore / avgMaxScore) * 100
+      // Ortalama başarı yüzdesi: toplam yüzde / öğrenci sayısı
+      const achievedPercentage = studentCount > 0
+        ? (loData.totalPercentageSum || 0) / studentCount
         : 0;
 
       return {
@@ -586,30 +619,18 @@ export const getStudentAchievements = async (req, res) => {
         return;
       }
 
-      // Process each question score
-      const questionScoresCount = (result.questionScores || []).length;
-      let processedCount = 0;
-      let missingLOCodeCount = 0;
-      let invalidLOCodeCount = 0;
-      
-      (result.questionScores || []).forEach((qs) => {
-        const loCode = qs.learningOutcomeCode;
-        if (loCode && studentMap.has(loCode)) {
-          const loData = studentMap.get(loCode);
-          loData.earned += qs.score || 0;
-          loData.max += exam.maxScorePerQuestion || 0;
-          processedCount++;
-        } else if (loCode) {
-          console.warn(`⚠️ ÖÇ kodu bulunamadı veya map'te yok: ${loCode} (öğrenci: ${result.studentNumber}, soru: ${qs.questionNumber})`);
-          invalidLOCodeCount++;
-        } else {
-          console.warn(`⚠️ learningOutcomeCode eksik (öğrenci: ${result.studentNumber}, soru: ${qs.questionNumber})`);
-          missingLOCodeCount++;
-        }
-      });
-      
-      if (questionScoresCount > 0 && processedCount === 0) {
-        console.warn(`⚠️ Öğrenci ${result.studentNumber} için hiç soru işlenemedi! (toplam: ${questionScoresCount}, eksik ÖÇ: ${missingLOCodeCount}, geçersiz ÖÇ: ${invalidLOCodeCount})`);
+      // Artık questionScores yok, outcomePerformance kullanılıyor
+      // outcomePerformance: { "ÖÇ1": 75.5, "ÖÇ2": 82.3, ... } formatında (yüzde olarak)
+      if (result.outcomePerformance && typeof result.outcomePerformance === 'object') {
+        Object.entries(result.outcomePerformance).forEach(([loCode, successPercentage]) => {
+          if (loCode && studentMap.has(loCode)) {
+            const loData = studentMap.get(loCode);
+            // successPercentage zaten yüzde olarak geliyor (0-100 arası)
+            // earned ve max'i yüzde olarak saklayacağız
+            loData.earned = Number(successPercentage) || 0;
+            loData.max = 100; // Maksimum yüzde 100
+          }
+        });
       }
     });
 
@@ -623,12 +644,13 @@ export const getStudentAchievements = async (req, res) => {
       let hasData = false;
       
       loMap.forEach((loData, loCode) => {
-        const percentage = loData.max > 0
-          ? (loData.earned / loData.max) * 100
+        // Artık earned zaten yüzde olarak geliyor (0-100 arası)
+        const percentage = loData.max > 0 && loData.earned > 0
+          ? loData.earned // Zaten yüzde olarak
           : 0;
         achievements[studentNumber][loCode] = Math.round(percentage * 100) / 100;
         
-        if (loData.max > 0) {
+        if (loData.max > 0 && loData.earned > 0) {
           hasData = true;
           totalLOsWithData++;
         }

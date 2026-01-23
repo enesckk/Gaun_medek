@@ -229,7 +229,7 @@ export default function ExamUploadPage() {
                   <div>
                     <p className="text-sm text-muted-foreground mb-1">Durum</p>
                     <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">
-                      {percentage !== null && percentage >= 60 ? (
+                      {percentage !== null && percentage >= 50 ? ( // 50 puan eşiği
                         <span className="text-green-600 dark:text-green-400">Başarılı</span>
                       ) : percentage !== null && percentage >= 40 ? (
                         <span className="text-amber-600 dark:text-amber-400">Orta</span>

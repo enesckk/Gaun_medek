@@ -35,7 +35,7 @@ export function LOAchievementBarChart({ achievements }: LOAchievementBarChartPro
   const chartData = achievements.map((achievement) => ({
     code: achievement.code,
     başarı: Math.round(achievement.achievedPercentage * 100) / 100,
-    hedef: 60, // MEDEK hedef eşiği
+    hedef: 50, // 50 puan eşiği
   }));
 
   const getColor = (value: number) => {
@@ -174,7 +174,7 @@ export function LOAchievementBarChart({ achievements }: LOAchievementBarChartPro
             </Bar>
             <Bar
               dataKey="hedef"
-              name="Hedef Eşik (60%)"
+              name="Hedef Eşik (50%)"
               fill="#94a3b8"
               opacity={0.3}
               radius={[8, 8, 0, 0]}

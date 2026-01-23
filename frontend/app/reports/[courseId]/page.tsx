@@ -186,8 +186,8 @@ export default function CourseReportPage() {
   const avgPOAchievement = poAchievements.length > 0
     ? poAchievements.reduce((sum, po) => sum + po.achievedPercentage, 0) / poAchievements.length
     : 0;
-  const loAboveThreshold = loAchievements.filter(lo => lo.achievedPercentage >= 60).length;
-  const poAboveThreshold = poAchievements.filter(po => po.achievedPercentage >= 60).length;
+  const loAboveThreshold = loAchievements.filter(lo => lo.achievedPercentage >= 50).length; // 50 puan eşiği
+  const poAboveThreshold = poAchievements.filter(po => po.achievedPercentage >= 50).length; // 50 puan eşiği
 
   const handlePrint = () => {
     window.print();
@@ -424,7 +424,7 @@ export default function CourseReportPage() {
                     <p className="text-lg font-bold text-brand-navy dark:text-slate-100">
                       {loAboveThreshold} / {loAchievements.length}
                     </p>
-                    <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">≥60% eşiği</p>
+                    <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">≥50% eşiği</p>
                   </div>
                 </div>
               </Card>
@@ -439,7 +439,7 @@ export default function CourseReportPage() {
                     <p className="text-lg font-bold text-brand-navy dark:text-slate-100">
                       {poAboveThreshold} / {poAchievements.length}
                     </p>
-                    <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">≥60% eşiği</p>
+                    <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">≥50% eşiği</p>
                   </div>
                 </div>
               </Card>

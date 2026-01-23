@@ -155,7 +155,7 @@ export function StudentExamScoreTable({ scores }: StudentExamScoreTableProps) {
                           <span className="font-semibold text-slate-900">{score.scoreValue}</span>
                           <span className="text-muted-foreground">/ {maxScore}</span>
                           <Badge 
-                            variant={percentage >= 60 ? "default" : percentage >= 40 ? "secondary" : "destructive"}
+                            variant={percentage >= 50 ? "default" : percentage >= 40 ? "secondary" : "destructive"} // 50 puan eşiği
                             className="text-xs"
                           >
                             %{percentage}

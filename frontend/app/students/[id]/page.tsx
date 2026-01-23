@@ -168,18 +168,17 @@ function StudentDetailContent() {
 
     const scores = examResults.map((result: any) => {
       const exam = typeof result.examId === 'object' ? result.examId : null;
-      const totalScore = result.questionScores?.reduce((sum: number, qs: any) => sum + (qs.score || 0), 0) || 0;
-      const maxScorePerQuestion = exam?.maxScorePerQuestion || 0;
-      const questionCount = result.questionScores?.length || 0;
-      const totalMaxScore = questionCount * maxScorePerQuestion;
-      const percentage = totalMaxScore > 0 ? (totalScore / totalMaxScore) * 100 : 0;
+      // Artık questionScores yok, sadece totalScore var
+      const totalScore = result.totalScore || 0;
+      const totalMaxScore = result.maxScore || exam?.maxScore || 100;
+      const percentage = result.percentage || (totalMaxScore > 0 ? (totalScore / totalMaxScore) * 100 : 0);
       return { totalScore, totalMaxScore, percentage };
     });
 
     const totalScore = scores.reduce((sum, s) => sum + s.totalScore, 0);
     const totalMaxScore = scores.reduce((sum, s) => sum + s.totalMaxScore, 0);
     const averageScore = totalMaxScore > 0 ? (totalScore / totalMaxScore) * 100 : 0;
-    const successCount = scores.filter((s) => s.percentage >= 60).length;
+    const successCount = scores.filter((s) => s.percentage >= 50).length; // 50 puan eşiği
     const successRate = scores.length > 0 ? (successCount / scores.length) * 100 : 0;
 
     return {
@@ -513,11 +512,11 @@ function StudentDetailContent() {
                   {examResults.map((result: any) => {
                     const exam = typeof result.examId === 'object' ? result.examId : null;
                     const course = typeof result.courseId === 'object' ? result.courseId : null;
-                    const totalScore = result.questionScores?.reduce((sum: number, qs: any) => sum + (qs.score || 0), 0) || 0;
-                    const maxScorePerQuestion = exam?.maxScorePerQuestion || 0;
-                    const totalMaxScore = result.questionScores?.length * maxScorePerQuestion || 0;
-                    const percentage = totalMaxScore > 0 ? Math.round((totalScore / totalMaxScore) * 100) : 0;
-                    const successColor = percentage >= 60 ? "green" : percentage >= 40 ? "amber" : "red";
+                    // Artık questionScores yok, sadece totalScore var
+                    const totalScore = result.totalScore || 0;
+                    const totalMaxScore = result.maxScore || exam?.maxScore || 100;
+                    const percentage = result.percentage || (totalMaxScore > 0 ? Math.round((totalScore / totalMaxScore) * 100) : 0);
+                    const successColor = percentage >= 50 ? "green" : percentage >= 40 ? "amber" : "red"; // 50 puan eşiği
                     
                     return (
                       <div
@@ -590,30 +589,31 @@ function StudentDetailContent() {
                           </div>
                         </div>
                         
-                        {result.questionScores && result.questionScores.length > 0 && (
+                        {/* Soru bazlı puanlar artık gösterilmiyor - sadece toplam puan var */}
+                        {result.outcomePerformance && Object.keys(result.outcomePerformance).length > 0 && (
                           <div className="border-t border-brand-navy/10 dark:border-slate-700/50 pt-3">
-                            <p className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-2">Soru Puanları:</p>
-                            <div className="grid grid-cols-5 sm:grid-cols-10 gap-2">
-                              {result.questionScores.map((qs: any, idx: number) => {
-                                const qsPercentage = maxScorePerQuestion > 0 ? Math.round((qs.score / maxScorePerQuestion) * 100) : 0;
-                                const qsColor = qsPercentage >= 60 ? "green" : qsPercentage >= 40 ? "amber" : "red";
+                            <p className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-2">Öğrenme Çıktısı Performansı:</p>
+                            <div className="flex flex-wrap gap-2">
+                              {Object.entries(result.outcomePerformance).map(([loCode, success]: [string, any]) => {
+                                const loColor = success >= 50 ? "green" : success >= 40 ? "amber" : "red"; // 50 puan eşiği
                                 return (
                                   <div
-                                    key={idx}
+                                    key={loCode}
                                     className={cn(
-                                      "text-center border rounded-lg p-2 transition-all",
-                                      qsColor === "green"
+                                      "text-center border rounded-lg px-3 py-1.5 transition-all",
+                                      loColor === "green"
                                         ? "bg-green-50 dark:bg-green-900/10 border-green-500/30"
-                                        : qsColor === "amber"
+                                        : loColor === "amber"
                                         ? "bg-amber-50 dark:bg-amber-900/10 border-amber-500/30"
                                         : "bg-red-50 dark:bg-red-900/10 border-red-500/30"
                                     )}
                                   >
-                                    <div className="text-xs text-slate-600 dark:text-slate-400 mb-1">S{qs.questionNumber}</div>
-                                    <div className="font-semibold text-base text-brand-navy dark:text-slate-100">{qs.score}</div>
-                                    {qs.learningOutcomeCode && (
-                                      <div className="text-xs text-brand-navy dark:text-slate-300 mt-1 font-medium">{qs.learningOutcomeCode}</div>
-                                    )}
+                                    <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                                      {loCode}
+                                    </p>
+                                    <p className="text-xs text-slate-600 dark:text-slate-400">
+                                      {typeof success === 'number' ? success.toFixed(1) : success}%
+                                    </p>
                                   </div>
                                 );
                               })}

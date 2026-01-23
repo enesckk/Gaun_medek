@@ -652,13 +652,27 @@ const startBatchScore = async (req, res) => {
           console.log(`📊 [Batch ${studentNumber}] Total score: ${totalScore}/${maxTotalScore} (${percentage.toFixed(2)}%)`);
 
           // 6) ÖÇ ve PÇ performansını hesapla (genel puan bazlı)
+          // Sadece sınavda eşlenen ÖÇ'ler için hesaplama yap
           let outcomePerformance = {};
           let programOutcomePerformance = {};
           
           if (courseForProcessing && courseForProcessing.learningOutcomes && courseForProcessing.learningOutcomes.length > 0) {
-            // Genel puanı tüm ÖÇ'lere eşit dağıt (veya sınav yapısına göre dağıt)
-            // Basit yaklaşım: Genel puan yüzdesini tüm ÖÇ'lere uygula
-            const loPerformance = (courseForProcessing.learningOutcomes || []).map((lo) => ({
+            // Sınavın questions array'inden eşlenen ÖÇ kodlarını al
+            const examQuestions = exam.questions || [];
+            const mappedLOCodes = new Set();
+            examQuestions.forEach((q) => {
+              if (q.learningOutcomeCode && q.learningOutcomeCode.trim() !== "") {
+                mappedLOCodes.add(q.learningOutcomeCode);
+              }
+            });
+            
+            // Eğer sınavda ÖÇ eşlemesi varsa sadece onları kullan, yoksa tüm ÖÇ'leri kullan
+            const relevantLOs = mappedLOCodes.size > 0
+              ? courseForProcessing.learningOutcomes.filter((lo) => mappedLOCodes.has(lo.code))
+              : courseForProcessing.learningOutcomes;
+            
+            // Her eşlenen ÖÇ için genel puan yüzdesini uygula
+            const loPerformance = relevantLOs.map((lo) => ({
               code: lo.code,
               description: lo.description,
               success: percentage, // Genel puan yüzdesi = ÖÇ başarısı
@@ -976,13 +990,27 @@ const submitExamScores = async (req, res) => {
     console.log(`📊 Total score: ${totalScore}/${maxTotalScore} (${percentage.toFixed(2)}%)`);
 
     // 5) ÖÇ ve PÇ performansını hesapla (genel puan bazlı)
+    // Sadece sınavda eşlenen ÖÇ'ler için hesaplama yap
     let outcomePerformance = {};
     let programOutcomePerformance = {};
     
     if (course && course.learningOutcomes && course.learningOutcomes.length > 0) {
-      // Genel puanı tüm ÖÇ'lere eşit dağıt (veya sınav yapısına göre dağıt)
-      // Basit yaklaşım: Genel puan yüzdesini tüm ÖÇ'lere uygula
-      const loPerformance = (course.learningOutcomes || []).map((lo) => ({
+      // Sınavın questions array'inden eşlenen ÖÇ kodlarını al
+      const examQuestions = exam.questions || [];
+      const mappedLOCodes = new Set();
+      examQuestions.forEach((q) => {
+        if (q.learningOutcomeCode && q.learningOutcomeCode.trim() !== "") {
+          mappedLOCodes.add(q.learningOutcomeCode);
+        }
+      });
+      
+      // Eğer sınavda ÖÇ eşlemesi varsa sadece onları kullan, yoksa tüm ÖÇ'leri kullan
+      const relevantLOs = mappedLOCodes.size > 0
+        ? course.learningOutcomes.filter((lo) => mappedLOCodes.has(lo.code))
+        : course.learningOutcomes;
+      
+      // Her eşlenen ÖÇ için genel puan yüzdesini uygula
+      const loPerformance = relevantLOs.map((lo) => ({
         code: lo.code,
         description: lo.description,
         success: percentage, // Genel puan yüzdesi = ÖÇ başarısı
@@ -1108,12 +1136,27 @@ const createOrUpdateStudentExamResult = async (req, res) => {
     }
 
     // ÖÇ ve PÇ performansını hesapla (genel puan bazlı)
+    // Sadece sınavda eşlenen ÖÇ'ler için hesaplama yap
     let outcomePerformance = {};
     let programOutcomePerformance = {};
     
     if (course && course.learningOutcomes && course.learningOutcomes.length > 0) {
-      // Genel puan yüzdesini tüm ÖÇ'lere uygula
-      const loPerformance = (course.learningOutcomes || []).map((lo) => ({
+      // Sınavın questions array'inden eşlenen ÖÇ kodlarını al
+      const examQuestions = exam.questions || [];
+      const mappedLOCodes = new Set();
+      examQuestions.forEach((q) => {
+        if (q.learningOutcomeCode && q.learningOutcomeCode.trim() !== "") {
+          mappedLOCodes.add(q.learningOutcomeCode);
+        }
+      });
+      
+      // Eğer sınavda ÖÇ eşlemesi varsa sadece onları kullan, yoksa tüm ÖÇ'leri kullan
+      const relevantLOs = mappedLOCodes.size > 0
+        ? course.learningOutcomes.filter((lo) => mappedLOCodes.has(lo.code))
+        : course.learningOutcomes;
+      
+      // Her eşlenen ÖÇ için genel puan yüzdesini uygula
+      const loPerformance = relevantLOs.map((lo) => ({
         code: lo.code,
         description: lo.description,
         success: percentage, // Genel puan yüzdesi = ÖÇ başarısı
