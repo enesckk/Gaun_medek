@@ -40,5 +40,10 @@ const DepartmentSchema = new mongoose.Schema(
   }
 );
 
+// Database Indexes for performance optimization
+DepartmentSchema.index({ code: 1 }, { unique: true, sparse: true }); // Unique index zaten var ama açıkça belirtiyoruz
+DepartmentSchema.index({ name: 1 }, { unique: true }); // Unique index zaten var ama açıkça belirtiyoruz
+DepartmentSchema.index({ createdAt: -1 }); // Son eklenen bölümler için
+
 export default mongoose.model("Department", DepartmentSchema);
 

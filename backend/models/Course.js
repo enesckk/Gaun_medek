@@ -46,4 +46,11 @@ const CourseSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+// Database Indexes for performance optimization
+CourseSchema.index({ code: 1 }, { unique: true }); // Unique index zaten var ama açıkça belirtiyoruz
+CourseSchema.index({ department: 1 }); // Department'a göre arama
+CourseSchema.index({ program: 1 }); // Program'a göre arama
+CourseSchema.index({ department: 1, program: 1 }); // Composite index: department + program
+CourseSchema.index({ createdAt: -1 }); // Son eklenen dersler için
+
 export default mongoose.model("Course", CourseSchema);

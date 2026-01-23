@@ -33,5 +33,12 @@ const ExamSchema = new mongoose.Schema(
   }
 );
 
+// Database Indexes for performance optimization
+ExamSchema.index({ courseId: 1 }); // Sık kullanılan: course'a göre sınav arama
+ExamSchema.index({ examType: 1 }); // Sınav tipine göre arama
+ExamSchema.index({ examCode: 1 }); // Sınav koduna göre arama
+ExamSchema.index({ courseId: 1, examType: 1 }); // Composite index: course + examType
+ExamSchema.index({ createdAt: -1 }); // Son eklenen sınavlar için
+
 export default mongoose.model("Exam", ExamSchema);
 

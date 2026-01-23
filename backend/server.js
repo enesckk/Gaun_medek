@@ -2,20 +2,23 @@ import express from "express";
 import mongoose from "mongoose";
 import cors from "cors";
 import dotenv from "dotenv";
+import { generalLimiter, createUpdateLimiter, aiLimiter } from "./middleware/rateLimiter.js";
+import logger from "./utils/logger.js";
 
 dotenv.config();
 
 // Log environment configuration
-console.log('🔧 Environment Configuration:');
-console.log('   NODE_ENV:', process.env.NODE_ENV || 'not set');
-console.log('   ENABLE_OPENCV:', process.env.ENABLE_OPENCV || 'not set (default: false)');
-console.log('   ENABLE_PDF_POPPLER:', process.env.ENABLE_PDF_POPPLER || 'not set (default: true)');
-console.log('   Platform:', process.platform);
+logger.info('🔧 Environment Configuration', {
+  NODE_ENV: process.env.NODE_ENV || 'not set',
+  ENABLE_OPENCV: process.env.ENABLE_OPENCV || 'not set (default: false)',
+  ENABLE_PDF_POPPLER: process.env.ENABLE_PDF_POPPLER || 'not set (default: true)',
+  Platform: process.platform,
+});
 if (process.env.ENABLE_OPENCV !== 'true') {
-  console.warn('⚠️ OpenCV is DISABLED. Marker detection and perspective transform will use fallback methods.');
+  logger.warn('⚠️ OpenCV is DISABLED. Marker detection and perspective transform will use fallback methods.');
 }
 if (process.env.ENABLE_PDF_POPPLER === 'false') {
-  console.warn('⚠️ PDF-Poppler is DISABLED. Using pdftoppm fallback.');
+  logger.warn('⚠️ PDF-Poppler is DISABLED. Using pdftoppm fallback.');
 }
 
 const app = express();
@@ -28,57 +31,58 @@ const allowedOrigins = [
   'https://gaun-mudek.vercel.app', // Vercel frontend URL (hardcoded)
 ].filter(Boolean);
 
-console.log('🔒 CORS Allowed Origins:', allowedOrigins);
-console.log('🔒 FRONTEND_URL:', process.env.FRONTEND_URL);
-console.log('🔒 NODE_ENV:', process.env.NODE_ENV);
+logger.info('🔒 CORS Configuration', {
+  allowedOrigins,
+  FRONTEND_URL: process.env.FRONTEND_URL,
+  NODE_ENV: process.env.NODE_ENV,
+});
 
 // CORS configuration with better error handling
 const corsOptions = {
   origin: function (origin, callback) {
     // Same-origin requests (no origin header) - allow
     if (!origin) {
-      console.log('✅ CORS: No origin header, allowing');
+      logger.debug('✅ CORS: No origin header, allowing');
       return callback(null, true);
     }
     
-    console.log('🌐 CORS Request from origin:', origin);
+    logger.debug('🌐 CORS Request from origin', { origin });
     
     // Check if origin is in allowed list
     if (allowedOrigins.includes(origin)) {
-      console.log('✅ CORS: Origin in allowed list');
+      logger.debug('✅ CORS: Origin in allowed list');
       return callback(null, true);
     }
     
     // Development mode: allow all origins
     if (process.env.NODE_ENV !== 'production') {
-      console.log('✅ CORS: Development mode, allowing all');
+      logger.debug('✅ CORS: Development mode, allowing all');
       return callback(null, true);
     }
     
     // Allow localhost for local development (even in production mode on Render)
     if (origin.startsWith('http://localhost:') || origin.startsWith('http://127.0.0.1:')) {
-      console.log('✅ CORS: Localhost detected, allowing');
+      logger.debug('✅ CORS: Localhost detected, allowing');
       return callback(null, true);
     }
     
     // Production: allow vercel.app and onrender.com domains (for flexibility)
     // Check both endsWith and includes for better matching
     if (origin.includes('.vercel.app') || origin.includes('.onrender.com')) {
-      console.log('✅ CORS: Vercel/Render domain detected, allowing');
+      logger.debug('✅ CORS: Vercel/Render domain detected, allowing');
       return callback(null, true);
     }
     
     // Also check if origin starts with https://gaun-mudek (any subdomain)
     if (origin.startsWith('https://gaun-mudek') || origin.includes('gaun-mudek')) {
-      console.log('✅ CORS: gaun-mudek domain detected, allowing');
+      logger.debug('✅ CORS: gaun-mudek domain detected, allowing');
       return callback(null, true);
     }
     
-    console.log('❌ CORS: Blocked origin:', origin);
-    console.log('❌ CORS: Allowed origins:', allowedOrigins);
+    logger.warn('❌ CORS: Blocked origin', { origin, allowedOrigins });
     // In production, still allow but log warning
     if (process.env.NODE_ENV === 'production') {
-      console.warn('⚠️ CORS: Allowing blocked origin in production (should be fixed)');
+      logger.warn('⚠️ CORS: Allowing blocked origin in production (should be fixed)');
       return callback(null, true);
     }
     callback(new Error('Not allowed by CORS'));
@@ -98,6 +102,9 @@ app.use(cors(corsOptions));
 app.options('*', cors(corsOptions));
 
 app.use(express.json());
+
+// Apply rate limiting to all API routes
+app.use('/api', generalLimiter);
 
 // Root route
 app.get("/", (req, res) => {
@@ -154,16 +161,16 @@ import settingsRoutes from "./routes/settingsRoutes.js";
 import notificationRoutes from "./routes/notificationRoutes.js";
 
 // Mount all routes
-app.use("/api/courses", courseRoutes);
+app.use("/api/courses", createUpdateLimiter, courseRoutes); // Create/update operations have stricter rate limiting
 app.use("/api/departments", departmentRoutes);
 app.use("/api/programs", programRoutes);
 app.use("/api/program-outcomes", programOutcomeRoutes);
-app.use("/api/exams", examRoutes);
+app.use("/api/exams", createUpdateLimiter, examRoutes); // Create/update operations have stricter rate limiting
 app.use("/api/questions", questionRoutes);
 app.use("/api/learning-outcomes", learningOutcomeRoutes);
 app.use("/api/students", studentRoutes);
 app.use("/api/scores", scoreRoutes);
-app.use("/api/ai", aiRoutes);
+app.use("/api/ai", aiLimiter, aiRoutes); // AI routes have stricter rate limiting
 app.use("/api/assessments", assessmentRoutes);
 app.use("/api/settings", settingsRoutes);
 app.use("/api/notifications", notificationRoutes);
@@ -204,8 +211,7 @@ app.use((err, req, res, next) => {
     }
   }
   
-  // Log error for debugging
-  console.error('Error handler caught:', err.message);
+  // Log error for debugging (logger will be used in globalErrorHandler)
   
   // Send error response
   const statusCode = err.status || err.statusCode || 500;
@@ -240,31 +246,32 @@ app.use((req, res) => {
   });
 });
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5001; // Default 5001 (5000'de macOS ControlCenter çalışıyor)
 const MONGO_URI = process.env.MONGODB_URI || process.env.MONGO_URI;
 const MONGODB_DB = process.env.MONGODB_DB || "mudek";
 
 // Render veya lokal için server'ı başlat
 async function startServer() {
-  console.log("=".repeat(50));
-  console.log("🚀 Starting backend server...");
-  console.log(`📦 Node version: ${process.version}`);
-  console.log(`🖥️  Platform: ${process.platform}`);
-  console.log(`📍 Working directory: ${process.cwd()}`);
-  console.log(`🔧 PORT: ${PORT}`);
-  console.log(`🔧 MONGODB_DB: ${MONGODB_DB}`);
-  console.log(`🔧 MONGO_URI: ${MONGO_URI ? 'Set (hidden)' : 'NOT SET'}`);
-  console.log("=".repeat(50));
+  logger.info("=".repeat(50));
+  logger.info("🚀 Starting backend server...");
+  logger.info("Server Configuration", {
+    nodeVersion: process.version,
+    platform: process.platform,
+    workingDirectory: process.cwd(),
+    port: PORT,
+    mongodbDb: MONGODB_DB,
+    mongoUriSet: !!MONGO_URI,
+  });
+  logger.info("=".repeat(50));
   
   if (!MONGO_URI) {
-    console.error("❌ MONGODB_URI (veya MONGO_URI) tanımlı değil. .env dosyanızı kontrol edin.");
-    console.error("❌ Render'da Environment Variables'dan MONGODB_URI'yi eklediğinizden emin olun.");
+    logger.error("❌ MONGODB_URI (veya MONGO_URI) tanımlı değil. .env dosyanızı kontrol edin.");
+    logger.error("❌ Render'da Environment Variables'dan MONGODB_URI'yi eklediğinizden emin olun.");
     process.exit(1);
   }
 
   try {
-    console.log("🔌 MongoDB'ye bağlanılıyor...");
-    console.log(`📊 Database: ${MONGODB_DB}`);
+    logger.info("🔌 MongoDB'ye bağlanılıyor...", { database: MONGODB_DB });
     
     await mongoose.connect(MONGO_URI, {
       dbName: MONGODB_DB,
@@ -276,38 +283,38 @@ async function startServer() {
       family: 4,
     });
     
-    console.log("✅ MongoDB bağlantısı kuruldu");
-    console.log(`📊 Veritabanı: ${MONGODB_DB}`);
+    logger.info("✅ MongoDB bağlantısı kuruldu", { database: MONGODB_DB });
 
-    const serverPort = process.env.PORT || PORT;
+    const serverPort = process.env.PORT || PORT; // Default 5001
     const server = app.listen(serverPort, () => {
-      console.log("=".repeat(50));
-      console.log(`🚀 Backend running on port ${serverPort}`);
-      console.log(`🌐 Health check: http://localhost:${serverPort}/api/health`);
-      console.log(`🌐 API: http://localhost:${serverPort}/api`);
-      console.log("=".repeat(50));
+      logger.info("=".repeat(50));
+      logger.info(`🚀 Backend running on port ${serverPort}`);
+      logger.info("Server URLs", {
+        healthCheck: `http://localhost:${serverPort}/api/health`,
+        api: `http://localhost:${serverPort}/api`,
+      });
+      logger.info("=".repeat(50));
     });
     
     // Graceful shutdown
     process.on('SIGTERM', () => {
-      console.log('SIGTERM received, shutting down gracefully...');
+      logger.info('SIGTERM received, shutting down gracefully...');
       server.close(() => {
         mongoose.connection.close(false, () => {
-          console.log('MongoDB connection closed.');
+          logger.info('MongoDB connection closed.');
           process.exit(0);
         });
       });
     });
     
   } catch (err) {
-    console.error("=".repeat(50));
-    console.error("❌ Server başlatma hatası:");
-    console.error("❌ Error name:", err.name);
-    console.error("❌ Error message:", err.message);
-    if (err.stack) {
-      console.error("❌ Error stack:", err.stack);
-    }
-    console.error("=".repeat(50));
+    logger.error("=".repeat(50));
+    logger.error("❌ Server başlatma hatası", {
+      errorName: err.name,
+      errorMessage: err.message,
+      stack: err.stack,
+    });
+    logger.error("=".repeat(50));
     
     // MongoDB Atlas IP whitelist hatası
     if (err.name === "MongooseServerSelectionError" || err.message.includes("whitelist")) {

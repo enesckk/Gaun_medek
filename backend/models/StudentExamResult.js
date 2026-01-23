@@ -20,6 +20,13 @@ const StudentExamResultSchema = new mongoose.Schema(
 // Unique constraint: Aynı öğrenci aynı sınavda sadece bir sonuç kaydı olabilir
 StudentExamResultSchema.index({ studentNumber: 1, examId: 1 }, { unique: true });
 
+// Additional indexes for performance optimization
+StudentExamResultSchema.index({ examId: 1 }); // Sık kullanılan: exam'a göre sonuç arama
+StudentExamResultSchema.index({ courseId: 1 }); // Course'a göre sonuç arama
+StudentExamResultSchema.index({ studentNumber: 1 }); // Öğrenci numarasına göre arama
+StudentExamResultSchema.index({ percentage: -1 }); // Yüzdeye göre sıralama
+StudentExamResultSchema.index({ createdAt: -1 }); // Son eklenen sonuçlar için
+
 const StudentExamResult = mongoose.model("StudentExamResult", StudentExamResultSchema);
 
 export default StudentExamResult;
