@@ -2,6 +2,7 @@ import express from "express";
 import multer from "multer";
 import {
   createExam,
+  getAllExams,
   getExamsByCourse,
   getExamById,
   updateExam,
@@ -22,6 +23,9 @@ const upload = multer({ storage: multer.memoryStorage() });
 router.post("/create", createExam);
 // Backward compatibility
 router.post("/", createExam);
+
+// GET /api/exams - Get all exams (must be before /course/:courseId)
+router.get("/", getAllExams);
 
 // GET /api/exams/course/:courseId - Spesifik route, :id'den önce
 router.get("/course/:courseId", getExamsByCourse);

@@ -125,7 +125,7 @@ function AIPreviewPageContent() {
       <div>
         <h2 className="text-3xl font-bold tracking-tight">Score Mapping Preview</h2>
         <p className="text-muted-foreground">
-          Review and edit AI-detected scores before saving
+          Tespit edilen puanları kontrol edin ve düzenleyin
         </p>
       </div>
 
@@ -140,7 +140,7 @@ function AIPreviewPageContent() {
         <CardHeader>
           <CardTitle>Genel Puan</CardTitle>
           <CardDescription>
-            AI tarafından tespit edilen genel puanı kontrol edin ve düzenleyin.
+            Tespit edilen genel puanı kontrol edin ve düzenleyin.
           </CardDescription>
         </CardHeader>
         <CardContent>

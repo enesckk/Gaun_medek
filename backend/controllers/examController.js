@@ -153,19 +153,15 @@ const createExam = async (req, res) => {
       learningOutcomes, // Sınav bazlı ÖÇ eşleme array'i
     } = req.body;
 
-    if (!courseId || !examType || !examCode || !maxScore) {
+    if (!courseId || !examType || !examCode) {
       return res.status(400).json({
         success: false,
-        message: "courseId, examType, examCode, maxScore zorunludur",
+        message: "courseId, examType, examCode zorunludur",
       });
     }
 
-    if (Number(maxScore) <= 0) {
-      return res.status(400).json({
-        success: false,
-        message: "maxScore pozitif olmalıdır",
-      });
-    }
+    // maxScore her zaman 100 olarak kaydedilir
+    const finalMaxScore = 100;
 
     if (!["midterm", "final"].includes(examType)) {
       return res.status(400).json({
@@ -217,7 +213,7 @@ const createExam = async (req, res) => {
       courseId,
       examType,
       examCode: examCode.trim(),
-      maxScore: Number(maxScore),
+      maxScore: 100, // Her zaman 100
       learningOutcomes: normalizedLOs, // Sınav bazlı ÖÇ eşleme
     });
 
@@ -227,12 +223,12 @@ const createExam = async (req, res) => {
     if (examType === "midterm") {
       course.midtermExam = {
         examCode: examCode.trim(),
-        maxScore: Number(maxScore),
+        maxScore: 100, // Her zaman 100
       };
     } else if (examType === "final") {
       course.finalExam = {
         examCode: examCode.trim(),
-        maxScore: Number(maxScore),
+        maxScore: 100, // Her zaman 100
       };
     }
     await course.save();
@@ -246,6 +242,29 @@ const createExam = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: error.message,
+    });
+  }
+};
+
+// Get all Exams (from all courses)
+const getAllExams = async (req, res) => {
+  try {
+    const exams = await Exam.find()
+      .populate({
+        path: "courseId",
+        select: "name code",
+      })
+      .sort({ updatedAt: -1 });
+
+    return res.status(200).json({
+      success: true,
+      data: exams,
+    });
+  } catch (error) {
+    console.error('Error in getAllExams:', error);
+    return res.status(500).json({
+      success: false,
+      message: error.message || "Sınavlar getirilirken bir hata oluştu",
     });
   }
 };
@@ -377,7 +396,7 @@ const updateExam = async (req, res) => {
     const updateData = {};
     if (examType !== undefined) updateData.examType = examType;
     if (examCode !== undefined) updateData.examCode = examCode.trim();
-    if (maxScore !== undefined) updateData.maxScore = Number(maxScore);
+    updateData.maxScore = 100; // Her zaman 100
     if (normalizedLOs !== undefined) updateData.learningOutcomes = normalizedLOs;
 
     const updatedExam = await Exam.findByIdAndUpdate(id, updateData, {
@@ -390,12 +409,12 @@ const updateExam = async (req, res) => {
     if (currentExamType === "midterm") {
       course.midtermExam = {
         examCode: (examCode !== undefined ? examCode.trim() : existingExam.examCode),
-        maxScore: (maxScore !== undefined ? Number(maxScore) : existingExam.maxScore),
+        maxScore: 100, // Her zaman 100
       };
     } else if (currentExamType === "final") {
       course.finalExam = {
         examCode: (examCode !== undefined ? examCode.trim() : existingExam.examCode),
-        maxScore: (maxScore !== undefined ? Number(maxScore) : existingExam.maxScore),
+        maxScore: 100, // Her zaman 100
       };
     }
     await course.save();
@@ -963,14 +982,16 @@ const getExamResultsByStudent = async (req, res) => {
 // Manual score entry endpoint (genel puan girişi)
 const createOrUpdateStudentExamResult = async (req, res) => {
   try {
-    const { studentNumber, examId, courseId, totalScore, maxScore, percentage } = req.body;
+    const { studentNumber, examId, courseId, totalScore, percentage } = req.body;
 
-    if (!studentNumber || !examId || !courseId || totalScore === undefined || maxScore === undefined || percentage === undefined) {
+    if (!studentNumber || !examId || !courseId || totalScore === undefined || percentage === undefined) {
       return res.status(400).json({
         success: false,
-        message: "studentNumber, examId, courseId, totalScore, maxScore ve percentage gereklidir",
+        message: "studentNumber, examId, courseId, totalScore ve percentage gereklidir",
       });
     }
+
+    const maxScore = 100; // Her zaman 100
 
     const exam = await Exam.findById(examId);
     if (!exam) {
@@ -1043,6 +1064,7 @@ const createOrUpdateStudentExamResult = async (req, res) => {
 
 export {
   createExam,
+  getAllExams,
   getExamsByCourse,
   getExamById,
   updateExam,

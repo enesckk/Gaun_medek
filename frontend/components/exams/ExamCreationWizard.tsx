@@ -54,7 +54,7 @@ export function ExamCreationWizard({ onSuccess }: ExamCreationWizardProps) {
   const [courseId, setCourseId] = useState("");
   const [examType, setExamType] = useState<"midterm" | "final">("midterm");
   const [examCode, setExamCode] = useState("");
-  const [maxScore, setMaxScore] = useState<number>(100);
+  const maxScore = 100; // Her zaman 100, sabit
   const [selectedLOs, setSelectedLOs] = useState<string[]>([]); // Sınav bazlı ÖÇ seçimi
   const [existingExams, setExistingExams] = useState<Exam[]>([]);
   const [examCodeError, setExamCodeError] = useState("");
@@ -224,10 +224,7 @@ export function ExamCreationWizard({ onSuccess }: ExamCreationWizardProps) {
         }
         return true;
       case 2:
-        if (!maxScore || maxScore <= 0) {
-          toast.error("Maksimum puan 1 veya daha büyük olmalıdır");
-          return false;
-        }
+        // Maksimum puan her zaman 100, validasyon gerekmez
         return true;
       case 3:
         // Sınav bazlı ÖÇ seçimi - en az bir ÖÇ seçilmeli
@@ -291,7 +288,7 @@ export function ExamCreationWizard({ onSuccess }: ExamCreationWizardProps) {
   const progress = (currentStep / 4) * 100; // 4 adım: Ders Seçimi, Puan Ayarları, ÖÇ Eşleme, Özet
 
   // Özet hesaplamaları
-  const totalMaxScore = maxScore;
+  const totalMaxScore = 100; // Her zaman 100
 
   return (
     <div className="space-y-6">
@@ -481,42 +478,17 @@ export function ExamCreationWizard({ onSuccess }: ExamCreationWizardProps) {
             </div>
           </CardHeader>
           <CardContent className="space-y-6">
-            <div className="grid grid-cols-1 gap-6">
-              <div className="space-y-2">
-                <Label htmlFor="maxScore" className="text-base">
-                  Maksimum Puan <span className="text-red-500">*</span>
-                </Label>
-                <Input
-                  id="maxScore"
-                  type="number"
-                  min={1}
-                  value={maxScore}
-                  onChange={(e) => setMaxScore(Number(e.target.value))}
-                  className="h-12 text-base text-lg"
-                />
-                <p className="text-sm text-muted-foreground">
-                  Sınav için maksimum toplam puan
-                </p>
-              </div>
-            </div>
-
-            {maxScore > 0 && (
-              <Card className="bg-slate-50 border-slate-200">
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-semibold text-slate-900">Toplam Maksimum Puan</p>
-                      <p className="text-3xl font-bold text-[#0a294e]">{totalMaxScore}</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-sm text-slate-700">
-                        Maksimum Puan
-                      </p>
-                    </div>
+            <Card className="bg-slate-50 border-slate-200">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-semibold text-slate-900">Maksimum Puan</p>
+                    <p className="text-3xl font-bold text-[#0a294e]">100</p>
+                    <p className="text-xs text-muted-foreground mt-1">Sabit değer</p>
                   </div>
-                </CardContent>
-              </Card>
-            )}
+                </div>
+              </CardContent>
+            </Card>
           </CardContent>
         </Card>
       )}
@@ -675,7 +647,7 @@ export function ExamCreationWizard({ onSuccess }: ExamCreationWizardProps) {
                 <CardContent className="space-y-2">
                   <div>
                     <p className="text-sm text-muted-foreground">Maksimum Puan</p>
-                    <p className="text-2xl font-bold text-green-600">{maxScore}</p>
+                    <p className="text-2xl font-bold text-green-600">100</p>
                   </div>
                 </CardContent>
               </Card>

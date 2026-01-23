@@ -320,11 +320,52 @@ export const createProgramOutcome = async (req, res) => {
   });
 };
 
+// Get all program outcomes from all departments (aggregated)
 export const getProgramOutcomes = async (req, res) => {
-  return res.status(400).json({
-    success: false,
-    message: "Bu endpoint kullanımdan kaldırıldı. Lütfen /api/program-outcomes/:departmentId kullanın.",
-  });
+  try {
+    const departments = await Department.find();
+    const allProgramOutcomes = [];
+    const seenCodes = new Set();
+
+    // Collect from all departments
+    for (const department of departments) {
+      // Get programs for this department
+      const programs = await Program.find({ department: department._id });
+      
+      for (const program of programs) {
+        if (program.programOutcomes && Array.isArray(program.programOutcomes)) {
+          for (const po of program.programOutcomes) {
+            if (!seenCodes.has(po.code)) {
+              allProgramOutcomes.push(po);
+              seenCodes.add(po.code);
+            }
+          }
+        }
+      }
+
+      // Also include legacy department-level program outcomes
+      if (department.programOutcomes && Array.isArray(department.programOutcomes)) {
+        for (const po of department.programOutcomes) {
+          if (!seenCodes.has(po.code)) {
+            allProgramOutcomes.push(po);
+            seenCodes.add(po.code);
+          }
+        }
+      }
+    }
+
+    return res.status(200).json({
+      success: true,
+      data: allProgramOutcomes,
+      message: "Tüm bölümlerden program çıktıları getirildi. Belirli bir bölüm için /api/program-outcomes/:departmentId kullanabilirsiniz.",
+    });
+  } catch (error) {
+    console.error("Error fetching all program outcomes:", error);
+    return res.status(500).json({
+      success: false,
+      message: error.message || "Program çıktıları getirilirken bir hata oluştu.",
+    });
+  }
 };
 
 export const getProgramOutcomeById = async (req, res) => {

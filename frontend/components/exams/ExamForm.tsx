@@ -48,9 +48,7 @@ export function ExamForm({ mode, examId, initialData, onSuccess }: ExamFormProps
     initialData?.examType || "midterm"
   );
   const [examCode, setExamCode] = useState(initialData?.examCode || "");
-  const [maxScore, setMaxScore] = useState<number>(
-    initialData?.maxScore || 100
-  );
+  const maxScore = 100; // Her zaman 100, sabit
   const [existingExams, setExistingExams] = useState<Exam[]>([]);
   const [examCodeError, setExamCodeError] = useState("");
 
@@ -166,10 +164,7 @@ export function ExamForm({ mode, examId, initialData, onSuccess }: ExamFormProps
       toast.error(examCodeError);
       return false;
     }
-    if (!maxScore || maxScore <= 0) {
-      toast.error("Maksimum puan 1 veya daha büyük olmalıdır");
-      return false;
-    }
+    // Maksimum puan her zaman 100, validasyon gerekmez
     for (const q of questions) {
       if (!q.learningOutcomeCode) {
         toast.error(`Soru ${q.questionNumber} için ÖÇ seçmelisiniz`);
@@ -287,19 +282,13 @@ export function ExamForm({ mode, examId, initialData, onSuccess }: ExamFormProps
         </div>
         <div className="space-y-2">
           <Label htmlFor="maxScore">
-            Maksimum Puan <span className="text-red-500">*</span>
+            Maksimum Puan
           </Label>
-          <Input
-            id="maxScore"
-            type="number"
-            min={1}
-            value={maxScore}
-            onChange={(e) => setMaxScore(Number(e.target.value))}
-            disabled={isSubmitting}
-            className="h-12 text-base"
-          />
+          <div className="h-12 text-base flex items-center px-4 bg-slate-50 dark:bg-slate-800 rounded-md border border-input">
+            <span className="text-lg font-semibold">100</span>
+          </div>
           <p className="text-sm text-muted-foreground">
-            Sınav için maksimum toplam puan
+            Sınav için maksimum toplam puan (sabit)
           </p>
         </div>
       </div>

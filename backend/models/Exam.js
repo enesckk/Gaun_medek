@@ -18,8 +18,8 @@ const ExamSchema = new mongoose.Schema(
     },
     maxScore: {
       type: Number,
-      required: true,
       default: 100,
+      immutable: true, // Her zaman 100, değiştirilemez
     },
     // Sınav bazlı ÖÇ eşleme - bu sınav hangi ÖÇ'lere eşlenecek
     learningOutcomes: [

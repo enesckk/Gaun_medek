@@ -13,7 +13,10 @@ const router = express.Router();
 // POST /api/learning-outcomes/
 router.post("/", createLearningOutcome);
 
-// GET /api/learning-outcomes/all (get all - for dashboard stats)
+// GET /api/learning-outcomes - Get all learning outcomes (root endpoint)
+router.get("/", getAllLearningOutcomes);
+
+// GET /api/learning-outcomes/all (backward compatibility - same as /)
 router.get("/all", getAllLearningOutcomes);
 
 // GET /api/learning-outcomes/course/:courseId (must come before /:id)

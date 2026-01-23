@@ -16,6 +16,10 @@ import {
 
 const router = express.Router();
 
+// GET /api/program-outcomes - Get all program outcomes (aggregated from all departments)
+// Must be FIRST to avoid conflict with /:departmentId route
+router.get("/", getProgramOutcomes);
+
 // Program-based PÇ management (new - preferred)
 // GET /api/program-outcomes/program/:programId
 router.get("/program/:programId", getProgramOutcomesByProgram);
@@ -29,7 +33,7 @@ router.put("/program/:programId/update", updateProgramOutcomes);
 // DELETE /api/program-outcomes/program/:programId/delete
 router.delete("/program/:programId/delete", deletePO);
 
-// Department-based PÇ management (legacy - for backward compatibility)
+// Department-based PÇ management
 // GET /api/program-outcomes/:departmentId
 router.get("/:departmentId", getProgramOutcomesByDepartment);
 
@@ -38,7 +42,6 @@ router.post("/:departmentId/add", addProgramOutcomeToDepartment);
 
 // Legacy endpoints (for backward compatibility)
 router.post("/", createProgramOutcome);
-router.get("/", getProgramOutcomes);
 router.get("/legacy/:id", getProgramOutcomeById);
 router.put("/legacy/:id", updateProgramOutcome);
 router.delete("/legacy/:id", deleteProgramOutcome);
