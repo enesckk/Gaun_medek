@@ -257,7 +257,25 @@ export default function ExamsPage() {
   const totalExams = exams.length;
   const midtermCount = exams.filter(e => e.examType === "midterm").length;
   const finalCount = exams.filter(e => e.examType === "final").length;
-  const totalQuestions = exams.reduce((sum, exam) => sum + (exam.questions?.length || exam.questionCount || 0), 0);
+  // Calculate total questions from exam.questionCount or exam.questions.length
+  // Also check course data if exam doesn't have questionCount
+  const totalQuestions = exams.reduce((sum, exam) => {
+    const examQuestionCount = exam.questionCount || exam.questions?.length || 0;
+    // If exam doesn't have questionCount, try to get it from course
+    if (examQuestionCount === 0) {
+      const courseId = typeof exam.courseId === "object" && exam.courseId !== null
+        ? exam.courseId._id
+        : exam.courseId;
+      const course = courseId ? courses[courseId] : undefined;
+      if (course) {
+        const courseQuestionCount = exam.examType === "midterm"
+          ? course.midtermExam?.questionCount || 0
+          : course.finalExam?.questionCount || 0;
+        return sum + courseQuestionCount;
+      }
+    }
+    return sum + examQuestionCount;
+  }, 0);
 
   return (
     <div className="space-y-6">

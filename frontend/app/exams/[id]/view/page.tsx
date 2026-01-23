@@ -51,6 +51,56 @@ export default function ExamDetailPage() {
     }
   };
 
+  // All hooks must be called before any early returns
+  const examTypeLabel = exam?.examType === "midterm" ? "Vize" : "Final";
+  // Sınav bazlı ÖÇ eşleme kontrolü
+  const mappedLOs = exam?.learningOutcomes || [];
+  const totalMaxScore = exam?.maxScore || 0;
+
+  // Get question count from course based on exam type
+  const questionCount = useMemo(() => {
+    if (!course || !exam) return 0;
+    if (exam.examType === "midterm") {
+      return course.midtermExam?.questionCount || 0;
+    } else {
+      return course.finalExam?.questionCount || 0;
+    }
+  }, [course, exam]);
+
+  // Get questions from exam (if available) or create placeholder questions
+  const questions = useMemo(() => {
+    if (!exam) return [];
+    if (exam.questions && Array.isArray(exam.questions) && exam.questions.length > 0) {
+      return exam.questions;
+    }
+    // If no questions in exam, create placeholder array based on questionCount
+    return Array.from({ length: questionCount }, (_, i) => ({
+      questionNumber: i + 1,
+      learningOutcomeCode: mappedLOs[i] || "",
+    }));
+  }, [exam, questionCount, mappedLOs]);
+
+  // Calculate mapped and unmapped questions
+  const mappedQuestions = useMemo(() => {
+    return questions.filter((q: any) => {
+      const loCode = q.learningOutcomeCode || "";
+      return loCode.trim() !== "";
+    });
+  }, [questions]);
+
+  const unmappedQuestions = useMemo(() => {
+    return questions.filter((q: any) => {
+      const loCode = q.learningOutcomeCode || "";
+      return loCode.trim() === "";
+    });
+  }, [questions]);
+
+  const mappingPercentage = useMemo(() => {
+    if (questionCount === 0) return 0;
+    return Math.round((mappedQuestions.length / questionCount) * 100);
+  }, [mappedQuestions.length, questionCount]);
+
+  // Early returns after all hooks
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-slate-50 to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-900 flex items-center justify-center">
@@ -63,11 +113,6 @@ export default function ExamDetailPage() {
   }
 
   if (!exam) return null;
-
-  const examTypeLabel = exam.examType === "midterm" ? "Vize" : "Final";
-  // Sınav bazlı ÖÇ eşleme kontrolü
-  const mappedLOs = exam.learningOutcomes || [];
-  const totalMaxScore = exam.maxScore || 0;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-slate-50 to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-900 p-6">
@@ -284,7 +329,13 @@ export default function ExamDetailPage() {
                       </div>
                       <div>
                         <p className="text-xs text-slate-600 dark:text-slate-400 mb-1">Soru Başına Max Puan</p>
-                        <p className="text-sm sm:text-base font-semibold text-brand-navy dark:text-slate-100">{exam.maxScorePerQuestion}</p>
+                        <p className="text-sm sm:text-base font-semibold text-brand-navy dark:text-slate-100">
+                          {course && exam.examType === "midterm" 
+                            ? course.midtermExam?.maxScorePerQuestion || "-"
+                            : course && exam.examType === "final"
+                            ? course.finalExam?.maxScorePerQuestion || "-"
+                            : "-"}
+                        </p>
                       </div>
                     </div>
                   </CardContent>
@@ -355,12 +406,12 @@ export default function ExamDetailPage() {
 
               <Card className="border border-brand-navy/20 dark:border-slate-700/50 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm shadow-modern">
                 <CardContent className="p-4 sm:p-6">
-                  {exam.questions && exam.questions.length > 0 ? (
+                  {questions && questions.length > 0 ? (
                     <div className="space-y-3">
-                      {exam.questions
+                      {questions
                         .slice()
-                        .sort((a, b) => (a.questionNumber || 0) - (b.questionNumber || 0))
-                        .map((q) => {
+                        .sort((a: any, b: any) => (a.questionNumber || 0) - (b.questionNumber || 0))
+                        .map((q: any) => {
                           const hasMapping = q.learningOutcomeCode && q.learningOutcomeCode.trim() !== "";
                           return (
                             <div
@@ -404,7 +455,13 @@ export default function ExamDetailPage() {
                                 <div className="flex items-center gap-4">
                                   <div className="text-sm text-slate-600 dark:text-slate-400">
                                     <span className="font-medium">Max Puan:</span>{" "}
-                                    <span className="font-semibold text-brand-navy dark:text-slate-100">{exam.maxScorePerQuestion}</span>
+                                    <span className="font-semibold text-brand-navy dark:text-slate-100">
+                                      {course && exam.examType === "midterm" 
+                                        ? course.midtermExam?.maxScorePerQuestion || "-"
+                                        : course && exam.examType === "final"
+                                        ? course.finalExam?.maxScorePerQuestion || "-"
+                                        : "-"}
+                                    </span>
                                   </div>
                                 </div>
                               </div>

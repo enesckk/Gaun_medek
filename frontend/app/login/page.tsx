@@ -54,11 +54,10 @@ export default function LoginPage() {
               />
               {/* Fallback Logo - NTMYO renklerinde */}
               <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-900 via-blue-800 to-red-700 rounded-xl border-2 border-white/30 shadow-xl">
-                <div className="text-white font-bold text-2xl">NT</div>
               </div>
             </div>
             <div>
-              <h2 className="text-2xl font-bold">NTMYO</h2>
+              <h2 className="text-2xl font-bold"></h2>
               <p className="text-sm text-white/80">Ölçme Değerlendirme Yönetim Sistemi</p>
             </div>
           </div>

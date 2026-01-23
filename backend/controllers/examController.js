@@ -151,6 +151,7 @@ const createExam = async (req, res) => {
       examCode,
       maxScore,
       learningOutcomes, // Sınav bazlı ÖÇ eşleme array'i
+      questions, // Soru bazlı ÖÇ eşleme array'i
     } = req.body;
 
     if (!courseId || !examType || !examCode) {
@@ -209,12 +210,42 @@ const createExam = async (req, res) => {
       }
     }
 
+    // Get question count from course
+    const questionCount = examType === "midterm" 
+      ? course.midtermExam?.questionCount || 0
+      : course.finalExam?.questionCount || 0;
+
+    // Use questions from request if provided, otherwise create from learning outcomes
+    let examQuestions = [];
+    if (questions && Array.isArray(questions) && questions.length > 0) {
+      // Use questions from frontend (question-based LO mapping)
+      examQuestions = questions;
+    } else if (questionCount > 0 && normalizedLOs && normalizedLOs.length > 0) {
+      // Create questions array from learning outcomes (backward compatibility)
+      for (let i = 1; i <= questionCount; i++) {
+        examQuestions.push({
+          questionNumber: i,
+          learningOutcomeCode: normalizedLOs[(i - 1) % normalizedLOs.length] || "",
+        });
+      }
+    } else if (questionCount > 0) {
+      // Create empty questions if no LOs selected yet
+      for (let i = 1; i <= questionCount; i++) {
+        examQuestions.push({
+          questionNumber: i,
+          learningOutcomeCode: "",
+        });
+      }
+    }
+
     const exam = new Exam({
       courseId,
       examType,
       examCode: examCode.trim(),
       maxScore: 100, // Her zaman 100
       learningOutcomes: normalizedLOs, // Sınav bazlı ÖÇ eşleme
+      questionCount: questionCount,
+      questions: examQuestions,
     });
 
     const savedExam = await exam.save();
@@ -337,6 +368,7 @@ const updateExam = async (req, res) => {
       examCode,
       maxScore,
       learningOutcomes, // Sınav bazlı ÖÇ eşleme array'i
+      questions, // Soru bazlı ÖÇ eşleme array'i
     } = req.body;
 
     const existingExam = await Exam.findById(id);
@@ -393,11 +425,74 @@ const updateExam = async (req, res) => {
       }
     }
 
+    // Get question count from course, or from questions if provided, or from existing exam
+    let questionCount = (examType || existingExam.examType) === "midterm" 
+      ? course.midtermExam?.questionCount || 0
+      : course.finalExam?.questionCount || 0;
+    
+    // If questions are provided, use their length as questionCount (fallback)
+    if (questions !== undefined && Array.isArray(questions) && questions.length > 0) {
+      // Use questions length if course questionCount is 0 or missing
+      if (questionCount === 0) {
+        questionCount = questions.length;
+        console.log(`📊 Using questionCount from questions array: ${questionCount}`);
+      }
+    } else if (questionCount === 0 && existingExam.questions && Array.isArray(existingExam.questions) && existingExam.questions.length > 0) {
+      // Fallback to existing exam's question count
+      questionCount = existingExam.questions.length;
+      console.log(`📊 Using questionCount from existing exam: ${questionCount}`);
+    }
+
+    // Use questions from request if provided, otherwise keep existing or create from learning outcomes
+    let examQuestions = [];
+    if (questions !== undefined) {
+      // Questions explicitly provided in request
+      if (Array.isArray(questions) && questions.length > 0) {
+        // Use questions from frontend (question-based LO mapping)
+        examQuestions = questions;
+      } else if (questionCount > 0) {
+        // Empty array provided, create empty questions
+        for (let i = 1; i <= questionCount; i++) {
+          examQuestions.push({
+            questionNumber: i,
+            learningOutcomeCode: "",
+          });
+        }
+      }
+    } else if (normalizedLOs !== undefined && questionCount > 0) {
+      // No questions in request, but learningOutcomes provided - create from LOs
+      if (normalizedLOs && normalizedLOs.length > 0) {
+        for (let i = 1; i <= questionCount; i++) {
+          examQuestions.push({
+            questionNumber: i,
+            learningOutcomeCode: normalizedLOs[(i - 1) % normalizedLOs.length] || "",
+          });
+        }
+      } else if (questionCount > 0) {
+        // Create empty questions if no LOs selected
+        for (let i = 1; i <= questionCount; i++) {
+          examQuestions.push({
+            questionNumber: i,
+            learningOutcomeCode: "",
+          });
+        }
+      }
+    } else if (questions === undefined && normalizedLOs === undefined && existingExam.questions && Array.isArray(existingExam.questions) && existingExam.questions.length > 0) {
+      // If questions is undefined and no normalizedLOs, keep existing questions (don't update)
+      examQuestions = existingExam.questions;
+      console.log(`📊 Keeping existing questions from exam: ${examQuestions.length}`);
+    }
+
     const updateData = {};
     if (examType !== undefined) updateData.examType = examType;
     if (examCode !== undefined) updateData.examCode = examCode.trim();
     updateData.maxScore = 100; // Her zaman 100
     if (normalizedLOs !== undefined) updateData.learningOutcomes = normalizedLOs;
+    updateData.questionCount = questionCount;
+    // Only update questions if explicitly provided or if we created new ones
+    if (questions !== undefined || examQuestions.length > 0) {
+      updateData.questions = examQuestions;
+    }
 
     const updatedExam = await Exam.findByIdAndUpdate(id, updateData, {
       new: true,
@@ -419,9 +514,17 @@ const updateExam = async (req, res) => {
     }
     await course.save();
 
+    // Populate courseId before returning
+    const populatedExam = await Exam.findById(updatedExam._id)
+      .populate({
+        path: "courseId",
+        select: "name code learningOutcomes",
+      })
+      .exec();
+
     return res.status(200).json({
       success: true,
-      data: updatedExam,
+      data: populatedExam || updatedExam,
     });
   } catch (error) {
     return res.status(500).json({
@@ -928,6 +1031,7 @@ const submitExamScores = async (req, res) => {
         totalScoreCrop: {
           imagePath: totalScoreCrop.imagePath,
         },
+        scores: [], // Soru bazlı skorlar artık kullanılmıyor, sadece toplam puan var
         totalScore,
         maxTotalScore,
         percentage: Math.round(percentage * 100) / 100,

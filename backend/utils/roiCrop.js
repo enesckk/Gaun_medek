@@ -77,37 +77,39 @@ async function warpAndDefineROIs(imageBuffer, markers) {
     const warpedBuffer = Buffer.from(cv.imencode(".png", warped));
 
     // Define ROIs (fixed pixel regions after warping)
-    const studentNumberBoxes = [
-      { x: 900, y: 1150, w: 140, h: 140 },
-      { x: 1040, y: 1150, w: 140, h: 140 },
-      { x: 1180, y: 1150, w: 140, h: 140 },
-      { x: 1320, y: 1150, w: 140, h: 140 },
-      { x: 1460, y: 1150, w: 140, h: 140 },
-      { x: 1600, y: 1150, w: 140, h: 140 },
-      { x: 1740, y: 1150, w: 140, h: 140 },
-      { x: 1880, y: 1150, w: 140, h: 140 },
-      { x: 2020, y: 1150, w: 140, h: 140 },
-      { x: 2160, y: 1150, w: 140, h: 140 },
-    ];
+    // Soru numaralarına göre koordinatlar - yorum satırına alındı (artık kullanılmıyor)
+    // const studentNumberBoxes = [
+    //   { x: 900, y: 1150, w: 140, h: 140 },
+    //   { x: 1040, y: 1150, w: 140, h: 140 },
+    //   { x: 1180, y: 1150, w: 140, h: 140 },
+    //   { x: 1320, y: 1150, w: 140, h: 140 },
+    //   { x: 1460, y: 1150, w: 140, h: 140 },
+    //   { x: 1600, y: 1150, w: 140, h: 140 },
+    //   { x: 1740, y: 1150, w: 140, h: 140 },
+    //   { x: 1880, y: 1150, w: 140, h: 140 },
+    //   { x: 2020, y: 1150, w: 140, h: 140 },
+    //   { x: 2160, y: 1150, w: 140, h: 140 },
+    // ];
 
-    const examIdBoxes = [
-      { x: 980, y: 1350, w: 140, h: 140 },
-      { x: 1120, y: 1350, w: 140, h: 140 },
-    ];
+    // const examIdBoxes = [
+    //   { x: 980, y: 1350, w: 140, h: 140 },
+    //   { x: 1120, y: 1350, w: 140, h: 140 },
+    // ];
 
-    // Genel puan kutusu - tek bir kutu (soru bazlı değil)
+    // Toplam Puan kutusu (ORİJİNAL sayfaya göre) ====
+    // Toplam: (488, 1586, 1165, 1699) -> x=488, y=1586, w=677, h=113
     const totalScoreBox = {
-      x: 1500,
-      y: 1650,
-      w: 350,
-      h: 120,
+      x: 488,
+      y: 1586,
+      w: 677,  // 1165 - 488
+      h: 113,  // 1699 - 1586
     };
 
     return {
       warpedImage: warpedBuffer,
-      studentNumberBoxes,
-      examIdBoxes,
-      totalScoreBox, // Soru bazlı kutular yerine tek genel puan kutusu
+      // studentNumberBoxes, // Artık kullanılmıyor
+      // examIdBoxes, // Artık kullanılmıyor
+      totalScoreBox, // Sadece toplam puan kutusu kullanılıyor
     };
   } catch (error) {
     throw new Error(`ROI warping failed: ${error.message}`);
@@ -180,19 +182,27 @@ async function cropTotalScoreBox(pngBuffer, markers) {
   console.log(`📐 Image dimensions: ${imageWidth}x${imageHeight}`);
   console.log(`📋 Using template fallback for total score box`);
   
-  // Genel puan kutusu koordinatları (fallback)
-  const totalScoreBox = {
-    x: 1500,
-    y: 1650,
-    w: 350,
-    h: 120,
-  };
+  // Toplam Puan kutusu (ORİJİNAL sayfaya göre) ====
+  // Orijinal template size: 1654x2339
+  // Koordinatlar: (488, 1586, 1165, 1699) -> x=488, y=1586, w=677, h=113
+  // Görüntü boyutuna göre ölçekleme yapıyoruz
+  const ORIGINAL_TEMPLATE_WIDTH = 1654;
+  const ORIGINAL_TEMPLATE_HEIGHT = 2339;
+  const ORIGINAL_X = 488;
+  const ORIGINAL_Y = 1586;
+  const ORIGINAL_W = 677;  // 1165 - 488
+  const ORIGINAL_H = 113;  // 1699 - 1586
   
-  // Yüzde değerlerini piksel değerlerine çevir (eğer yüzde kullanılıyorsa)
-  const x = totalScoreBox.x !== undefined ? totalScoreBox.x : Math.round((totalScoreBox.xPercent || 60) * imageWidth / 100);
-  const y = totalScoreBox.y !== undefined ? totalScoreBox.y : Math.round((totalScoreBox.yPercent || 47) * imageHeight / 100);
-  const w = totalScoreBox.w !== undefined ? totalScoreBox.w : Math.round((totalScoreBox.wPercent || 14) * imageWidth / 100);
-  const h = totalScoreBox.h !== undefined ? totalScoreBox.h : Math.round((totalScoreBox.hPercent || 3.4) * imageHeight / 100);
+  // Orijinal template'e göre yüzde hesapla, sonra gerçek görüntü boyutuna ölçekle
+  const scaleX = imageWidth / ORIGINAL_TEMPLATE_WIDTH;
+  const scaleY = imageHeight / ORIGINAL_TEMPLATE_HEIGHT;
+  
+  const x = Math.round(ORIGINAL_X * scaleX);
+  const y = Math.round(ORIGINAL_Y * scaleY);
+  const w = Math.round(ORIGINAL_W * scaleX);
+  const h = Math.round(ORIGINAL_H * scaleY);
+  
+  console.log(`📏 Scaled coordinates: x=${x}, y=${y}, w=${w}, h=${h} (scale: ${scaleX.toFixed(3)}x, ${scaleY.toFixed(3)}y)`);
   
   // Koordinatları doğrula
   if (x === undefined || y === undefined || w === undefined || h === undefined || 

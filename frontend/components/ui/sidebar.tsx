@@ -66,16 +66,7 @@ export function Sidebar() {
                   src="/assets/ntmyo-logo.png" 
                   alt="NTMYO Logo" 
                   className="w-full h-full object-contain"
-                  onError={(e) => {
-                    // Fallback if logo doesn't exist yet
-                    const target = e.target as HTMLImageElement;
-                    target.style.display = 'none';
-                  }}
                 />
-                {/* Fallback Logo - NTMYO renklerinde */}
-                <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-900 to-blue-700 rounded-lg border-2 border-white/20 shadow-lg">
-                  <div className="text-white font-bold text-lg">NT</div>
-                </div>
               </div>
               <div className="flex-1 min-w-0">
                 <h1 className="text-lg lg:text-xl font-bold text-white leading-tight">NTMYO</h1>

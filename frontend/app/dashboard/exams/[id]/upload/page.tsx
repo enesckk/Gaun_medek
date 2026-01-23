@@ -205,55 +205,48 @@ export default function ExamUploadPage() {
           <CardTitle>Sonuç Önizleme</CardTitle>
         </CardHeader>
         <CardContent className="overflow-x-auto space-y-4">
-          {scores.length === 0 ? (
+          {totalScore === null && maxTotalScore === null && percentage === null ? (
             <p className="text-muted-foreground text-sm">
               Henüz sonuç yok. PDF yükleyip puanlama başlatın.
             </p>
           ) : (
             <>
               {/* Toplam Puan Bilgisi */}
-              {(totalScore !== null || maxTotalScore !== null || percentage !== null) && (
-                <div className="bg-slate-50 p-4 rounded-lg border-2 border-slate-200">
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div>
-                      <p className="text-sm text-muted-foreground mb-1">Toplam Puan</p>
-                      <p className="text-2xl font-bold text-slate-900">
-                        {totalScore !== null ? totalScore.toFixed(1) : '-'} / {maxTotalScore !== null ? maxTotalScore.toFixed(1) : '-'}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground mb-1">Başarı Yüzdesi</p>
-                      <p className="text-2xl font-bold text-slate-900">
-                        {percentage !== null ? `${percentage.toFixed(2)}%` : '-'}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground mb-1">Soru Sayısı</p>
-                      <p className="text-2xl font-bold text-slate-900">{scores.length}</p>
-                    </div>
+              <div className="bg-slate-50 dark:bg-slate-800 p-4 rounded-lg border-2 border-slate-200 dark:border-slate-700">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <p className="text-sm text-muted-foreground mb-1">Toplam Puan</p>
+                    <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">
+                      {totalScore !== null ? totalScore.toFixed(1) : '-'} / {maxTotalScore !== null ? maxTotalScore.toFixed(1) : '-'}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground mb-1">Başarı Yüzdesi</p>
+                    <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">
+                      {percentage !== null ? `${percentage.toFixed(2)}%` : '-'}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground mb-1">Durum</p>
+                    <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">
+                      {percentage !== null && percentage >= 60 ? (
+                        <span className="text-green-600 dark:text-green-400">Başarılı</span>
+                      ) : percentage !== null && percentage >= 40 ? (
+                        <span className="text-amber-600 dark:text-amber-400">Orta</span>
+                      ) : percentage !== null ? (
+                        <span className="text-red-600 dark:text-red-400">Başarısız</span>
+                      ) : '-'}
+                    </p>
                   </div>
                 </div>
-              )}
+              </div>
 
-              {/* Soru Detayları Tablosu */}
-              <table className="w-full border text-sm">
-                <thead className="bg-slate-50">
-                  <tr>
-                    <th className="p-2 border">Soru</th>
-                    <th className="p-2 border">ÖÇ</th>
-                    <th className="p-2 border">Skor</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {scores.map((s) => (
-                    <tr key={s.questionNumber} className="text-center">
-                      <td className="border p-2">{s.questionNumber}</td>
-                      <td className="border p-2">{s.learningOutcomeCode || "-"}</td>
-                      <td className="border p-2">{s.score}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              {/* Bilgi Notu */}
+              <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg border border-blue-200 dark:border-blue-800">
+                <p className="text-sm text-blue-800 dark:text-blue-200">
+                  <strong>Not:</strong> Bu sınav için genel puan sistemi kullanılmaktadır. Soru bazlı detaylı skorlar gösterilmemektedir.
+                </p>
+              </div>
             </>
           )}
         </CardContent>

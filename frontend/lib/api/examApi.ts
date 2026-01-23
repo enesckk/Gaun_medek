@@ -7,6 +7,11 @@ export interface Exam {
   examCode: string;
   maxScore: number; // Maksimum toplam puan (soru bazlı değil)
   learningOutcomes?: string[]; // Sınav bazlı ÖÇ eşleme (ÖÇ kodları array'i)
+  questionCount?: number; // Soru sayısı (course'dan alınır)
+  questions?: Array<{ // Soru bazlı ÖÇ eşleme
+    questionNumber: number;
+    learningOutcomeCode: string;
+  }>;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -80,6 +85,10 @@ export interface CreateExamDto {
   examCode: string;
   maxScore: number; // Maksimum toplam puan
   learningOutcomes?: string[]; // Sınav bazlı ÖÇ eşleme (ÖÇ kodları array'i)
+  questions?: Array<{ // Soru bazlı ÖÇ eşleme
+    questionNumber: number;
+    learningOutcomeCode: string;
+  }>;
 }
 
 export interface UpdateExamDto {
@@ -87,6 +96,10 @@ export interface UpdateExamDto {
   examCode?: string;
   maxScore?: number; // Maksimum toplam puan
   learningOutcomes?: string[]; // Sınav bazlı ÖÇ eşleme (ÖÇ kodları array'i)
+  questions?: Array<{ // Soru bazlı ÖÇ eşleme
+    questionNumber: number;
+    learningOutcomeCode: string;
+  }>;
 }
 
 export const examApi = {

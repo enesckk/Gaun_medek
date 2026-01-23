@@ -27,6 +27,23 @@ const ExamSchema = new mongoose.Schema(
         type: String, // ÖÇ kodu (örn: "ÖÇ1", "ÖÇ2")
       },
     ],
+    // Soru bazlı bilgiler (course'dan alınır)
+    questionCount: {
+      type: Number,
+      default: 0,
+    },
+    questions: [
+      {
+        questionNumber: {
+          type: Number,
+          required: true,
+        },
+        learningOutcomeCode: {
+          type: String,
+          default: "",
+        },
+      },
+    ],
   },
   {
     timestamps: true,

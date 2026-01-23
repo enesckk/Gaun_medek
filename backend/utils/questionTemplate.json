@@ -14,7 +14,8 @@
     { "digit": 8, "xPercent": 60.76, "yPercent": 53.87, "wPercent": 4.05, "hPercent": 2.91 },
     { "digit": 9, "xPercent": 65.05, "yPercent": 53.87, "wPercent": 4.05, "hPercent": 2.91 }
   ],
-  "questionScoreBoxes": [
+  "_questionScoreBoxes_comment": "Soru numaralarına göre koordinatlar - yorum satırına alındı (artık kullanılmıyor, sadece toplam puan kutusu kullanılıyor)",
+  "_questionScoreBoxes": [
     { "number": 1, "xPercent": 50.48, "yPercent": 67.08, "wPercent": 18.13, "hPercent": 1.58 },
     { "number": 2, "xPercent": 50.48, "yPercent": 69.13, "wPercent": 18.13, "hPercent": 1.63 },
     { "number": 3, "xPercent": 50.48, "yPercent": 71.18, "wPercent": 18.13, "hPercent": 1.58 },

@@ -103,8 +103,12 @@ app.options('*', cors(corsOptions));
 
 app.use(express.json());
 
-// Apply rate limiting to all API routes
-app.use('/api', generalLimiter);
+// Apply rate limiting to all API routes (skip in development)
+if (process.env.NODE_ENV === 'production') {
+  app.use('/api', generalLimiter);
+} else {
+  logger.info('⚠️ Rate limiting DISABLED in development mode');
+}
 
 // Root route
 app.get("/", (req, res) => {
@@ -161,16 +165,31 @@ import settingsRoutes from "./routes/settingsRoutes.js";
 import notificationRoutes from "./routes/notificationRoutes.js";
 
 // Mount all routes
-app.use("/api/courses", createUpdateLimiter, courseRoutes); // Create/update operations have stricter rate limiting
+// Apply rate limiting only in production
+if (process.env.NODE_ENV === 'production') {
+  app.use("/api/courses", createUpdateLimiter, courseRoutes);
+} else {
+  app.use("/api/courses", courseRoutes);
+}
 app.use("/api/departments", departmentRoutes);
 app.use("/api/programs", programRoutes);
 app.use("/api/program-outcomes", programOutcomeRoutes);
-app.use("/api/exams", createUpdateLimiter, examRoutes); // Create/update operations have stricter rate limiting
+// Apply rate limiting only in production
+if (process.env.NODE_ENV === 'production') {
+  app.use("/api/exams", createUpdateLimiter, examRoutes);
+} else {
+  app.use("/api/exams", examRoutes);
+}
 app.use("/api/questions", questionRoutes);
 app.use("/api/learning-outcomes", learningOutcomeRoutes);
 app.use("/api/students", studentRoutes);
 app.use("/api/scores", scoreRoutes);
-app.use("/api/ai", aiLimiter, aiRoutes); // AI routes have stricter rate limiting
+// Apply rate limiting only in production
+if (process.env.NODE_ENV === 'production') {
+  app.use("/api/ai", aiLimiter, aiRoutes);
+} else {
+  app.use("/api/ai", aiRoutes);
+}
 app.use("/api/assessments", assessmentRoutes);
 app.use("/api/settings", settingsRoutes);
 app.use("/api/notifications", notificationRoutes);
