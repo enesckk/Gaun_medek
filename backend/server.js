@@ -24,11 +24,13 @@ if (process.env.ENABLE_PDF_POPPLER === 'false') {
 const app = express();
 
 // CORS configuration - Frontend URL'ini allow et
+// Normalize URLs by removing trailing slashes
+const normalizeUrl = (url) => url ? url.replace(/\/$/, '') : null;
 const allowedOrigins = [
-  process.env.FRONTEND_URL,
+  normalizeUrl(process.env.FRONTEND_URL),
   'http://localhost:3000',
   'http://localhost:3001',
-  'https://gaun-mudek.vercel.app', // Vercel frontend URL (hardcoded)
+  'https://gaun-medek.vercel.app', // Vercel frontend URL (hardcoded)
 ].filter(Boolean);
 
 logger.info('🔒 CORS Configuration', {
@@ -48,8 +50,11 @@ const corsOptions = {
     
     logger.debug('🌐 CORS Request from origin', { origin });
     
-    // Check if origin is in allowed list
-    if (allowedOrigins.includes(origin)) {
+    // Normalize origin for comparison (remove trailing slash)
+    const normalizedOrigin = origin.replace(/\/$/, '');
+    
+    // Check if origin is in allowed list (exact match or normalized match)
+    if (allowedOrigins.includes(origin) || allowedOrigins.includes(normalizedOrigin)) {
       logger.debug('✅ CORS: Origin in allowed list');
       return callback(null, true);
     }
@@ -73,9 +78,9 @@ const corsOptions = {
       return callback(null, true);
     }
     
-    // Also check if origin starts with https://gaun-mudek (any subdomain)
-    if (origin.startsWith('https://gaun-mudek') || origin.includes('gaun-mudek')) {
-      logger.debug('✅ CORS: gaun-mudek domain detected, allowing');
+    // Also check if origin starts with https://gaun-medek (any subdomain)
+    if (origin.startsWith('https://gaun-medek') || origin.includes('gaun-medek')) {
+      logger.debug('✅ CORS: gaun-medek domain detected, allowing');
       return callback(null, true);
     }
     
@@ -222,7 +227,7 @@ app.use((err, req, res, next) => {
       origin.startsWith('http://127.0.0.1:') ||
       origin.endsWith('.vercel.app') ||
       origin.endsWith('.onrender.com') ||
-      origin.startsWith('https://gaun-mudek');
+      origin.startsWith('https://gaun-medek');
     
     if (isAllowed) {
       res.setHeader('Access-Control-Allow-Origin', origin);
@@ -252,7 +257,7 @@ app.use((req, res) => {
       origin.startsWith('http://127.0.0.1:') ||
       origin.endsWith('.vercel.app') ||
       origin.endsWith('.onrender.com') ||
-      origin.startsWith('https://gaun-mudek');
+      origin.startsWith('https://gaun-medek');
     
     if (isAllowed) {
       res.setHeader('Access-Control-Allow-Origin', origin);
