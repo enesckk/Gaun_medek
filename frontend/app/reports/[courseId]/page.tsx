@@ -376,7 +376,7 @@ export default function CourseReportPage() {
           const achievements = studentAchievements[student.studentNumber] || {};
           const row = [
             student.studentNumber,
-            student.fullName || student.name
+            student.name
           ];
           course.learningOutcomes.forEach(lo => {
             const percentage = achievements[lo.code] || 0;
