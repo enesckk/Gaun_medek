@@ -32,7 +32,8 @@ import { StudentComparisonChart } from "@/components/reports/StudentComparisonCh
 import { HeatmapChart } from "@/components/reports/HeatmapChart";
 import { LOAchievementBarChart } from "@/components/reports/LOAchievementBarChart";
 import { POAchievementBarChart } from "@/components/reports/POAchievementBarChart";
-import { CourseSummaryCard } from "@/components/reports/CourseSummaryCard";
+// import { CourseSummaryCard } from "@/components/reports/CourseSummaryCard";
+import { CombinedAchievementChart } from "@/components/reports/CombinedAchievementChart";
 import { courseApi, type Course } from "@/lib/api/courseApi";
 import { examApi, type Exam } from "@/lib/api/examApi";
 import { studentApi, type Student } from "@/lib/api/studentApi";
@@ -330,8 +331,8 @@ export default function CourseReportPage() {
       `;
       pdfContainer.insertAdjacentHTML('beforeend', overviewHTML);
       
-      // 2. ÖÇ Analizi Section
-      if (loAchievements.length > 0) {
+      // 2. ÖÇ Analizi Section - Yorum satırına alındı
+      /* if (loAchievements.length > 0) {
         pdfContainer.appendChild(createSectionTitle('ÖÇ Analizi'));
         
         const loTableHeaders = ['ÖÇ Kodu', 'Açıklama', 'Öğrenci Sayısı', 'Toplam Max Puan', 'Ortalama Başarı %'];
@@ -347,10 +348,10 @@ export default function CourseReportPage() {
           ];
         });
         pdfContainer.appendChild(createTable(loTableHeaders, loTableRows));
-      }
+      } */
       
-      // 3. PÇ Analizi Section
-      if (poAchievements.length > 0) {
+      // 3. PÇ Analizi Section - Yorum satırına alındı
+      /* if (poAchievements.length > 0) {
         pdfContainer.appendChild(createSectionTitle('PÇ Analizi'));
         
         const poTableHeaders = ['PÇ Kodu', 'Açıklama', 'Katkıda Bulunan ÖÇ', 'Ortalama Başarı %'];
@@ -365,7 +366,7 @@ export default function CourseReportPage() {
           ];
         });
         pdfContainer.appendChild(createTable(poTableHeaders, poTableRows));
-      }
+      } */
       
       // 4. Öğrenci Karşılaştırması Section
       if (students.length > 0 && course.learningOutcomes && course.learningOutcomes.length > 0) {
@@ -389,8 +390,8 @@ export default function CourseReportPage() {
         pdfContainer.appendChild(createTable(studentTableHeaders, studentTableRows));
       }
       
-      // 5. Heatmap Section
-      if (students.length > 0 && course.learningOutcomes && course.learningOutcomes.length > 0) {
+      // 5. Heatmap Section - Yorum satırına alındı
+      /* if (students.length > 0 && course.learningOutcomes && course.learningOutcomes.length > 0) {
         pdfContainer.appendChild(createSectionTitle('Öğrenci-ÖÇ Başarı Heatmap'));
         
         const learningOutcomes = course.learningOutcomes;
@@ -411,7 +412,7 @@ export default function CourseReportPage() {
           return row;
         });
         pdfContainer.appendChild(createTable(heatmapTableHeaders, heatmapTableRows));
-      }
+      } */
       
       // Wait for rendering
       await new Promise(resolve => setTimeout(resolve, 500));
@@ -569,16 +570,24 @@ export default function CourseReportPage() {
           </Card>
         </div>
 
-        {/* Course Summary Card */}
-        <CourseSummaryCard
+        {/* Course Summary Card - Yorum satırına alındı */}
+        {/* <CourseSummaryCard
           loAchievements={loAchievements}
           poAchievements={poAchievements}
           course={course}
-        />
+        /> */}
+
+        {/* Genel Başarı Özeti - ÖÇ ve PÇ Grafiği */}
+        {(loAchievements.length > 0 || poAchievements.length > 0) && (
+          <CombinedAchievementChart
+            loAchievements={loAchievements}
+            poAchievements={poAchievements}
+          />
+        )}
 
         {/* Tabs Navigation */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-5 h-auto bg-slate-100/50 dark:bg-slate-800/50 p-1 rounded-lg">
+          <TabsList className="grid w-full grid-cols-2 h-auto bg-slate-100/50 dark:bg-slate-800/50 p-1 rounded-lg">
             <TabsTrigger
               value="overview"
               className={`${
@@ -591,7 +600,8 @@ export default function CourseReportPage() {
               <span className="hidden sm:inline">Genel Bakış</span>
               <span className="sm:hidden">Genel</span>
             </TabsTrigger>
-            <TabsTrigger
+            {/* ÖÇ Analizi Tab - Yorum satırına alındı */}
+            {/* <TabsTrigger
               value="lo"
               className={`${
                 activeTab === "lo"
@@ -602,8 +612,9 @@ export default function CourseReportPage() {
               <Target className="h-4 w-4 mr-2" />
               <span className="hidden sm:inline">ÖÇ Analizi</span>
               <span className="sm:hidden">ÖÇ</span>
-            </TabsTrigger>
-            <TabsTrigger
+            </TabsTrigger> */}
+            {/* PÇ Analizi Tab - Yorum satırına alındı */}
+            {/* <TabsTrigger
               value="po"
               className={`${
                 activeTab === "po"
@@ -614,7 +625,7 @@ export default function CourseReportPage() {
               <GraduationCap className="h-4 w-4 mr-2" />
               <span className="hidden sm:inline">PÇ Analizi</span>
               <span className="sm:hidden">PÇ</span>
-            </TabsTrigger>
+            </TabsTrigger> */}
             <TabsTrigger
               value="students"
               className={`${
@@ -627,7 +638,8 @@ export default function CourseReportPage() {
               <span className="hidden sm:inline">Öğrenci Karşılaştırması</span>
               <span className="sm:hidden">Öğrenci</span>
             </TabsTrigger>
-            <TabsTrigger
+            {/* Heatmap Tab - Yorum satırına alındı */}
+            {/* <TabsTrigger
               value="heatmap"
               className={`${
                 activeTab === "heatmap"
@@ -638,7 +650,7 @@ export default function CourseReportPage() {
               <BarChart3 className="h-4 w-4 mr-2" />
               <span className="hidden sm:inline">Heatmap</span>
               <span className="sm:hidden">Map</span>
-            </TabsTrigger>
+            </TabsTrigger> */}
           </TabsList>
 
           {/* Overview Tab */}
@@ -661,14 +673,14 @@ export default function CourseReportPage() {
               <Card className="group relative overflow-hidden border border-brand-navy/20 dark:border-slate-700/50 rounded-xl p-5 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm shadow-modern hover:border-brand-navy/50 hover:shadow-lg transition-all duration-300">
                 <div className="flex items-center gap-4">
                   <div className="p-3 bg-gradient-to-br from-brand-navy/10 to-brand-navy/5 dark:from-brand-navy/20 dark:to-brand-navy/10 rounded-xl">
-                    <Target className="h-6 w-6 text-brand-navy dark:text-slate-200" />
+                    <Users className="h-6 w-6 text-brand-navy dark:text-slate-200" />
                   </div>
                   <div className="flex-1">
-                    <p className="text-xs font-semibold text-brand-navy/70 dark:text-slate-400 uppercase tracking-wide mb-1">Başarılı ÖÇ</p>
+                    <p className="text-xs font-semibold text-brand-navy/70 dark:text-slate-400 uppercase tracking-wide mb-1">Öğrenci Sayısı</p>
                     <p className="text-lg font-bold text-brand-navy dark:text-slate-100">
-                      {loAboveThreshold} / {loAchievements.length}
+                      {students.length}
                     </p>
-                    <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">≥50% eşiği</p>
+                    <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">Toplam öğrenci</p>
                   </div>
                 </div>
               </Card>
@@ -676,14 +688,14 @@ export default function CourseReportPage() {
               <Card className="group relative overflow-hidden border border-brand-navy/20 dark:border-slate-700/50 rounded-xl p-5 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm shadow-modern hover:border-brand-navy/50 hover:shadow-lg transition-all duration-300">
                 <div className="flex items-center gap-4">
                   <div className="p-3 bg-gradient-to-br from-brand-navy/10 to-brand-navy/5 dark:from-brand-navy/20 dark:to-brand-navy/10 rounded-xl">
-                    <GraduationCap className="h-6 w-6 text-brand-navy dark:text-slate-200" />
+                    <FileText className="h-6 w-6 text-brand-navy dark:text-slate-200" />
                   </div>
                   <div className="flex-1">
-                    <p className="text-xs font-semibold text-brand-navy/70 dark:text-slate-400 uppercase tracking-wide mb-1">Başarılı PÇ</p>
+                    <p className="text-xs font-semibold text-brand-navy/70 dark:text-slate-400 uppercase tracking-wide mb-1">Sınav Sayısı</p>
                     <p className="text-lg font-bold text-brand-navy dark:text-slate-100">
-                      {poAboveThreshold} / {poAchievements.length}
+                      {exams.length}
                     </p>
-                    <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">≥50% eşiği</p>
+                    <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">Toplam sınav</p>
                   </div>
                 </div>
               </Card>
@@ -694,9 +706,9 @@ export default function CourseReportPage() {
                     <TrendingUp className="h-6 w-6 text-brand-navy dark:text-slate-200" />
                   </div>
                   <div className="flex-1">
-                    <p className="text-xs font-semibold text-brand-navy/70 dark:text-slate-400 uppercase tracking-wide mb-1">PÇ Ortalama</p>
+                    <p className="text-xs font-semibold text-brand-navy/70 dark:text-slate-400 uppercase tracking-wide mb-1">Genel Ortalama</p>
                     <p className="text-lg font-bold text-brand-navy dark:text-slate-100">
-                      {avgPOAchievement.toFixed(1)}%
+                      {((avgLOAchievement + avgPOAchievement) / 2).toFixed(1)}%
                     </p>
                     <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">Ortalama başarı</p>
                   </div>
@@ -705,14 +717,12 @@ export default function CourseReportPage() {
             </div>
           </TabsContent>
 
-          {/* LO Analysis Tab */}
+          {/* LO Analysis Tab - Yorum satırına alındı */}
+          {/* 
           <TabsContent value="lo" className="space-y-4 sm:space-y-6 mt-4">
-            {/* LO Achievement Bar Chart */}
             {loAchievements.length > 0 && (
               <LOAchievementBarChart achievements={loAchievements} />
             )}
-
-            {/* LO Achievement Table */}
             <Card className="border border-brand-navy/20 dark:border-slate-700/50 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm shadow-modern rounded-xl">
               <CardHeader className="bg-gradient-to-r from-brand-navy to-[#0f3a6b] text-white rounded-t-xl">
                 <CardTitle className="flex items-center gap-2 text-xl">
@@ -737,8 +747,6 @@ export default function CourseReportPage() {
                 )}
               </CardContent>
             </Card>
-
-            {/* LO Progress Cards */}
             {loAchievements.length > 0 && (
               <div className="space-y-4">
                 <div className="flex items-center gap-3">
@@ -761,15 +769,14 @@ export default function CourseReportPage() {
               </div>
             )}
           </TabsContent>
+          */}
 
-          {/* PO Analysis Tab */}
+          {/* PO Analysis Tab - Yorum satırına alındı */}
+          {/* 
           <TabsContent value="po" className="space-y-4 sm:space-y-6 mt-4">
-            {/* PO Achievement Bar Chart */}
             {poAchievements.length > 0 && (
               <POAchievementBarChart achievements={poAchievements} />
             )}
-
-            {/* PO Achievement Table */}
             <Card className="border border-brand-navy/20 dark:border-slate-700/50 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm shadow-modern rounded-xl">
               <CardHeader className="bg-gradient-to-r from-brand-navy to-[#0f3a6b] text-white rounded-t-xl">
                 <CardTitle className="flex items-center gap-2 text-xl">
@@ -794,8 +801,6 @@ export default function CourseReportPage() {
                 )}
               </CardContent>
             </Card>
-
-            {/* PO Progress Cards */}
             {poAchievements.length > 0 && (
               <div className="space-y-4">
                 <div className="flex items-center gap-3">
@@ -818,6 +823,7 @@ export default function CourseReportPage() {
               </div>
             )}
           </TabsContent>
+          */}
 
           {/* Student Comparison Tab */}
           <TabsContent value="students" className="space-y-4 sm:space-y-6 mt-4">
@@ -853,7 +859,8 @@ export default function CourseReportPage() {
             )}
           </TabsContent>
 
-          {/* Heatmap Tab */}
+          {/* Heatmap Tab - Yorum satırına alındı */}
+          {/* 
           <TabsContent value="heatmap" className="space-y-4 sm:space-y-6 mt-4">
             {students.length > 0 && course.learningOutcomes && course.learningOutcomes.length > 0 ? (
               <div className="space-y-4">
@@ -890,6 +897,7 @@ export default function CourseReportPage() {
               </Card>
             )}
           </TabsContent>
+          */}
         </Tabs>
 
       </div>
