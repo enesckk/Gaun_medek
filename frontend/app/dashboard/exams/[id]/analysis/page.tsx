@@ -27,6 +27,7 @@ import {
 } from "recharts";
 import { Loader2, Download } from "lucide-react";
 import { toast } from "sonner";
+import { exportToPDF } from "@/lib/utils/pdfExport";
 
 type QuestionRow = ExamAnalysisResponse["questionAnalysis"][number];
 type OutcomeRow = ExamAnalysisResponse["learningOutcomeAnalysis"][number];
@@ -74,8 +75,20 @@ export default function ExamAnalysisPage() {
     return analysis?.programOutcomeAnalysis || [];
   }, [analysis]);
 
-  const handleExportPdf = () => {
-    window.print();
+  const handleExportPdf = async () => {
+    try {
+      const examCode = analysis ? `Sınav_Analizi_${new Date().toISOString().split('T')[0]}` : 'Sınav_Analizi';
+      await exportToPDF('exam-analysis-content', examCode, {
+        format: 'a4',
+        orientation: 'portrait',
+        margin: 10,
+        quality: 1.0,
+      });
+      toast.success('PDF başarıyla oluşturuldu');
+    } catch (error: any) {
+      console.error('PDF export error:', error);
+      toast.error(error?.message || 'PDF oluşturulurken hata oluştu');
+    }
   };
 
   if (isLoading) {
@@ -92,7 +105,7 @@ export default function ExamAnalysisPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div id="exam-analysis-content" className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Sınav Analizi</h1>

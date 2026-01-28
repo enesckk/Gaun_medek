@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { exportToPDF } from "@/lib/utils/pdfExport";
 import {
   Table,
   TableBody,
@@ -199,8 +200,21 @@ export function MudekMatrixView({
     }
   };
 
-  const handleExportPDF = () => {
-    window.print();
+  const handleExportPDF = async () => {
+    try {
+      const courseCode = course?.code || 'Mudek_Matrisi';
+      const filename = `NTMYO_Matrisi_${courseCode}_${new Date().toISOString().split('T')[0]}`;
+      await exportToPDF('mudek-matrix-content', filename, {
+        format: 'a4',
+        orientation: 'landscape',
+        margin: 10,
+        quality: 1.0,
+      });
+      toast.success('PDF başarıyla oluşturuldu');
+    } catch (error: any) {
+      console.error('PDF export error:', error);
+      toast.error(error?.message || 'PDF oluşturulurken hata oluştu');
+    }
   };
 
   // İstatistikler hesapla
@@ -292,7 +306,7 @@ export function MudekMatrixView({
   }
 
   return (
-    <div className="space-y-6">
+    <div id="mudek-matrix-content" className="space-y-6">
       {/* Header - Outside Card */}
       <div className="space-y-4">
         <div className="flex items-center gap-3">

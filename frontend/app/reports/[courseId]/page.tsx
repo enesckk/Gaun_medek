@@ -44,6 +44,7 @@ import {
   type POAchievement,
 } from "@/lib/api/assessmentApi";
 import { type LOAchievement as ScoreLOAchievement } from "@/lib/api/scoreApi";
+import { exportToPDF } from "@/lib/utils/pdfExport";
 
 export default function CourseReportPage() {
   const params = useParams();
@@ -193,12 +194,253 @@ export default function CourseReportPage() {
     window.print();
   };
 
-  const handleExportPDF = () => {
-    toast.info("PDF export özelliği yakında eklenecek");
+  const handleExportPDF = async () => {
+    try {
+      toast.info('PDF oluşturuluyor, lütfen bekleyin...');
+      
+      // Import PDF utilities dynamically
+      const { exportToPDF } = await import('@/lib/utils/pdfExport');
+      
+      // Create a single container with all content
+      const pdfContainer = document.createElement('div');
+      pdfContainer.id = 'pdf-export-all-content';
+      pdfContainer.style.position = 'fixed';
+      pdfContainer.style.left = '-9999px';
+      pdfContainer.style.top = '0';
+      pdfContainer.style.width = '210mm';
+      pdfContainer.style.backgroundColor = '#ffffff';
+      pdfContainer.style.padding = '20px';
+      pdfContainer.style.fontFamily = 'Arial, sans-serif';
+      pdfContainer.style.color = '#000000';
+      document.body.appendChild(pdfContainer);
+      
+      // Helper function to create section title
+      const createSectionTitle = (text: string) => {
+        const title = document.createElement('h2');
+        title.textContent = text;
+        title.style.fontSize = '22px';
+        title.style.fontWeight = 'bold';
+        title.style.marginTop = '30px';
+        title.style.marginBottom = '20px';
+        title.style.color = '#0a294e';
+        title.style.borderBottom = '2px solid #0a294e';
+        title.style.paddingBottom = '10px';
+        title.style.pageBreakBefore = 'always';
+        return title;
+      };
+      
+      // Helper function to create table
+      const createTable = (headers: string[], rows: string[][]) => {
+        const table = document.createElement('table');
+        table.style.width = '100%';
+        table.style.borderCollapse = 'collapse';
+        table.style.marginBottom = '20px';
+        table.style.fontSize = '12px';
+        
+        // Header
+        const thead = document.createElement('thead');
+        const headerRow = document.createElement('tr');
+        headerRow.style.backgroundColor = '#0a294e';
+        headerRow.style.color = '#ffffff';
+        headers.forEach(header => {
+          const th = document.createElement('th');
+          th.textContent = header;
+          th.style.padding = '10px';
+          th.style.border = '1px solid #ddd';
+          th.style.textAlign = 'left';
+          headerRow.appendChild(th);
+        });
+        thead.appendChild(headerRow);
+        table.appendChild(thead);
+        
+        // Body
+        const tbody = document.createElement('tbody');
+        rows.forEach((row, index) => {
+          const tr = document.createElement('tr');
+          tr.style.backgroundColor = index % 2 === 0 ? '#ffffff' : '#f9f9f9';
+          row.forEach(cell => {
+            const td = document.createElement('td');
+            td.innerHTML = cell;
+            td.style.padding = '10px';
+            td.style.border = '1px solid #ddd';
+            tr.appendChild(td);
+          });
+          tbody.appendChild(tr);
+        });
+        table.appendChild(tbody);
+        
+        return table;
+      };
+      
+      // Header section
+      const headerHTML = `
+        <div style="margin-bottom: 30px; border-bottom: 3px solid #0a294e; padding-bottom: 15px;">
+          <h1 style="font-size: 28px; font-weight: bold; color: #0a294e; margin: 0 0 5px 0;">
+            ${course.code} - ${course.name}
+          </h1>
+          <p style="font-size: 16px; color: #666; margin: 0;">NTMYO Akreditasyon Raporu</p>
+          <p style="font-size: 12px; color: #999; margin: 5px 0 0 0;">${new Date().toLocaleDateString('tr-TR')}</p>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 30px;">
+          <div style="padding: 15px; border: 1px solid #ddd; border-radius: 8px; text-align: center;">
+            <p style="font-size: 12px; color: #666; margin: 0 0 5px 0;">Öğrenciler</p>
+            <p style="font-size: 24px; font-weight: bold; color: #0a294e; margin: 0;">${students.length}</p>
+          </div>
+          <div style="padding: 15px; border: 1px solid #ddd; border-radius: 8px; text-align: center;">
+            <p style="font-size: 12px; color: #666; margin: 0 0 5px 0;">Sınavlar</p>
+            <p style="font-size: 24px; font-weight: bold; color: #0a294e; margin: 0;">${exams.length}</p>
+          </div>
+          <div style="padding: 15px; border: 1px solid #ddd; border-radius: 8px; text-align: center;">
+            <p style="font-size: 12px; color: #666; margin: 0 0 5px 0;">Öğrenme Çıktıları</p>
+            <p style="font-size: 24px; font-weight: bold; color: #0a294e; margin: 0;">${course.learningOutcomes?.length || 0}</p>
+          </div>
+          <div style="padding: 15px; border: 1px solid #ddd; border-radius: 8px; text-align: center;">
+            <p style="font-size: 12px; color: #666; margin: 0 0 5px 0;">Ortalama Başarı</p>
+            <p style="font-size: 24px; font-weight: bold; color: #0a294e; margin: 0;">${avgLOAchievement.toFixed(1)}%</p>
+          </div>
+        </div>
+      `;
+      pdfContainer.innerHTML = headerHTML;
+      
+      // 1. Genel Bakış Section
+      pdfContainer.appendChild(createSectionTitle('Genel Bakış'));
+      const overviewHTML = `
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 20px;">
+          <div style="padding: 15px; border: 1px solid #ddd; border-radius: 8px;">
+            <p style="font-size: 11px; color: #666; margin: 0 0 5px 0; text-transform: uppercase;">Ders Kodu</p>
+            <p style="font-size: 16px; font-weight: bold; color: #0a294e; margin: 0;">${course.code}</p>
+            <p style="font-size: 10px; color: #999; margin: 5px 0 0 0;">${course.name}</p>
+          </div>
+          <div style="padding: 15px; border: 1px solid #ddd; border-radius: 8px;">
+            <p style="font-size: 11px; color: #666; margin: 0 0 5px 0; text-transform: uppercase;">Başarılı ÖÇ</p>
+            <p style="font-size: 16px; font-weight: bold; color: #0a294e; margin: 0;">${loAboveThreshold} / ${loAchievements.length}</p>
+            <p style="font-size: 10px; color: #999; margin: 5px 0 0 0;">≥50% eşiği</p>
+          </div>
+          <div style="padding: 15px; border: 1px solid #ddd; border-radius: 8px;">
+            <p style="font-size: 11px; color: #666; margin: 0 0 5px 0; text-transform: uppercase;">Başarılı PÇ</p>
+            <p style="font-size: 16px; font-weight: bold; color: #0a294e; margin: 0;">${poAboveThreshold} / ${poAchievements.length}</p>
+            <p style="font-size: 10px; color: #999; margin: 5px 0 0 0;">≥50% eşiği</p>
+          </div>
+          <div style="padding: 15px; border: 1px solid #ddd; border-radius: 8px;">
+            <p style="font-size: 11px; color: #666; margin: 0 0 5px 0; text-transform: uppercase;">PÇ Ortalama</p>
+            <p style="font-size: 16px; font-weight: bold; color: #0a294e; margin: 0;">${avgPOAchievement.toFixed(1)}%</p>
+            <p style="font-size: 10px; color: #999; margin: 5px 0 0 0;">Ortalama başarı</p>
+          </div>
+        </div>
+      `;
+      pdfContainer.insertAdjacentHTML('beforeend', overviewHTML);
+      
+      // 2. ÖÇ Analizi Section
+      if (loAchievements.length > 0) {
+        pdfContainer.appendChild(createSectionTitle('ÖÇ Analizi'));
+        
+        const loTableHeaders = ['ÖÇ Kodu', 'Açıklama', 'Öğrenci Sayısı', 'Toplam Max Puan', 'Ortalama Başarı %'];
+        const loTableRows = loAchievements.map(lo => {
+          const percentage = Math.round(lo.achievedPercentage * 100) / 100;
+          const color = percentage >= 50 ? '#22c55e' : '#ef4444';
+          return [
+            `<strong>${lo.code}</strong>`,
+            lo.description || '-',
+            lo.studentCount?.toString() || '0',
+            lo.totalMaxScore?.toFixed(1) || '0.0',
+            `<span style="color: ${color}; font-weight: bold;">${percentage.toFixed(1)}%</span>`
+          ];
+        });
+        pdfContainer.appendChild(createTable(loTableHeaders, loTableRows));
+      }
+      
+      // 3. PÇ Analizi Section
+      if (poAchievements.length > 0) {
+        pdfContainer.appendChild(createSectionTitle('PÇ Analizi'));
+        
+        const poTableHeaders = ['PÇ Kodu', 'Açıklama', 'Katkıda Bulunan ÖÇ', 'Ortalama Başarı %'];
+        const poTableRows = poAchievements.map(po => {
+          const percentage = Math.round(po.achievedPercentage * 100) / 100;
+          const color = percentage >= 50 ? '#22c55e' : '#ef4444';
+          return [
+            `<strong>${po.code}</strong>`,
+            `Program Çıktısı ${po.code}`,
+            po.contributingLOCount?.toString() || '0',
+            `<span style="color: ${color}; font-weight: bold;">${percentage.toFixed(1)}%</span>`
+          ];
+        });
+        pdfContainer.appendChild(createTable(poTableHeaders, poTableRows));
+      }
+      
+      // 4. Öğrenci Karşılaştırması Section
+      if (students.length > 0 && course.learningOutcomes && course.learningOutcomes.length > 0) {
+        pdfContainer.appendChild(createSectionTitle('Öğrenci Karşılaştırması'));
+        
+        const studentTableHeaders = ['Öğrenci No', 'Öğrenci Adı', ...(course.learningOutcomes.map(lo => lo.code))];
+        const studentTableRows = students.map(student => {
+          const achievements = studentAchievements[student.studentNumber] || {};
+          const row = [
+            student.studentNumber,
+            student.fullName || student.name
+          ];
+          course.learningOutcomes.forEach(lo => {
+            const percentage = achievements[lo.code] || 0;
+            const color = percentage >= 50 ? '#22c55e' : '#ef4444';
+            row.push(`<span style="color: ${color};">${percentage.toFixed(1)}%</span>`);
+          });
+          return row;
+        });
+        pdfContainer.appendChild(createTable(studentTableHeaders, studentTableRows));
+      }
+      
+      // 5. Heatmap Section
+      if (students.length > 0 && course.learningOutcomes && course.learningOutcomes.length > 0) {
+        pdfContainer.appendChild(createSectionTitle('Öğrenci-ÖÇ Başarı Heatmap'));
+        
+        const heatmapTableHeaders = ['Öğrenci', ...(course.learningOutcomes.map(lo => lo.code))];
+        const heatmapTableRows = students.map(student => {
+          const achievements = studentAchievements[student.studentNumber] || {};
+          const row = [student.studentNumber];
+          course.learningOutcomes.forEach(lo => {
+            const percentage = achievements[lo.code] || 0;
+            // Heatmap color intensity
+            const intensity = Math.min(100, Math.max(0, percentage));
+            const red = intensity < 50 ? 255 : Math.round(255 - ((intensity - 50) * 2.55));
+            const green = intensity >= 50 ? 255 : Math.round(intensity * 5.1);
+            const bgColor = `rgb(${red}, ${green}, 0)`;
+            const textColor = intensity > 50 ? '#ffffff' : '#000000';
+            row.push(`<div style="background-color: ${bgColor}; color: ${textColor}; padding: 5px; text-align: center; border-radius: 4px; font-weight: bold;">${percentage.toFixed(1)}%</div>`);
+          });
+          return row;
+        });
+        pdfContainer.appendChild(createTable(heatmapTableHeaders, heatmapTableRows));
+      }
+      
+      // Wait for rendering
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Export
+      const filename = `NTMYO_Raporu_${course.code}_${new Date().toISOString().split('T')[0]}`;
+      await exportToPDF('pdf-export-all-content', filename, {
+        format: 'a4',
+        orientation: 'portrait',
+        margin: 15,
+        quality: 1.0,
+      });
+      
+      // Cleanup
+      document.body.removeChild(pdfContainer);
+      
+      toast.success('PDF başarıyla oluşturuldu');
+    } catch (error: any) {
+      console.error('PDF export error:', error);
+      toast.error(error?.message || 'PDF oluşturulurken hata oluştu');
+      
+      // Cleanup on error
+      const container = document.getElementById('pdf-export-all-content');
+      if (container) {
+        document.body.removeChild(container);
+      }
+    }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 p-4 sm:p-6">
+    <div id="report-content" className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 p-4 sm:p-6">
       <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6">
         {/* Breadcrumb */}
         <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
